@@ -1,0 +1,48 @@
+﻿# Python Workers - Festival Mbois Intelligence Platform
+# Requirements file for all workers
+
+# Core
+python-dotenv==1.0.0
+asyncio==3.4.3
+aiohttp==3.9.1
+requests==2.31.0
+
+# Database
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# Redis
+redis==5.0.1
+aioredis==2.0.1
+
+# Web Scraping
+beautifulsoup4==4.12.2
+lxml==5.0.0
+playwright==1.40.0
+selenium==4.16.0
+
+# Instagram
+instaloader==4.10.3
+
+# TikTok
+TikTokApi==6.3.1
+
+# Sentiment Analysis
+transformers==4.36.2
+torch==2.1.2
+nltk==3.8.1
+textblob==0.17.1
+Sastrawi==1.0.1
+
+# Utilities
+pydantic==2.5.3
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Logging
+loguru==0.7.2
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.23.2
+
