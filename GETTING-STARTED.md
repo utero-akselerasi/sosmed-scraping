@@ -495,3 +495,43 @@ This is your chance to work on an **enterprise-grade, production-ready system** 
 **Last Updated:** July 23, 2026  
 **Status:** Ready for Team Onboarding
 
+
+
+---
+
+## 👨‍💻 INFORMASI KREDIT
+
+### Dibuat Oleh
+**Kharisman**  
+Senior Software Architect & Engineer  
+🌐 Website: [maskhar.com](https://maskhar.com)
+
+### Organisasi
+**Utero Indonesia**  
+Technology Solutions & Digital Innovation
+
+### Kualitas Arsitektur
+- **Level:** Principal Software Architect
+- **Pengalaman:** 20+ tahun industri software
+- **Standar:** Enterprise-grade, production-ready
+
+---
+
+## 📄 LISENSI
+
+**Copyright © 2026 Utero Indonesia**  
+**Arsitek: Kharisman (maskhar.com)**
+
+Untuk pertanyaan atau konsultasi:
+- Website: https://maskhar.com
+- Organisasi: Utero Indonesia
+
+---
+
+**Selamat datang di tim! Mari bangun sesuatu yang luar biasa! 🚀**
+
+---
+
+*Terakhir Diperbarui: 24 Juli 2026*  
+*Versi: 1.0*  
+*Status: Siap untuk Team Onboarding*

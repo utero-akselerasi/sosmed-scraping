@@ -380,9 +380,45 @@ Every aspect has been thoughtfully designed, thoroughly documented, and professi
 
 **"Documentation is love for your future self and your team."**
 
+
+
+---
+
+## 👨‍💻 INFORMASI KREDIT
+
+### Dibuat Oleh
+**Kharisman**  
+Senior Software Architect & Engineer  
+🌐 Website: [maskhar.com](https://maskhar.com)
+
+### Organisasi
+**Utero Indonesia**  
+Technology Solutions & Digital Innovation
+
+### Tim Arsitektur
+- **Chief Architect:** Kharisman
+- **Kualitas:** Principal Software Architect Level
+- **Pengalaman:** 20+ tahun industri software
+
+---
+
+## 📄 LISENSI
+
+**Copyright © 2026 Utero Indonesia**  
+**Arsitek: Kharisman (maskhar.com)**
+
+Dokumentasi ini adalah milik Festival Mbois dan Utero Indonesia.
+
+---
+
+*Terakhir Diperbarui: 24 Juli 2026*  
+*Versi: 1.0*  
+*Status: Lengkap & Siap Digunakan*
+
 ---
 
 **Document Version:** 1.0  
 **Last Updated:** July 23, 2026  
 **Status:** Complete & Ready
+
 
