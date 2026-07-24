@@ -6,6 +6,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 import appConfig from './config/app.config';
 import typeormConfig from './config/typeorm.config';
 import { AuthModule } from './modules/auth/auth.module';
+import { PostsModule } from './modules/posts/posts.module';
+import { PlatformsModule } from './modules/platforms/platforms.module';
+import { InfluencersModule } from './modules/influencers/influencers.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import {
   User,
   Platform,
@@ -68,6 +72,10 @@ import {
 
     // Feature Modules
     AuthModule,
+    PostsModule,
+    PlatformsModule,
+    InfluencersModule,
+    AnalyticsModule,
   ],
   controllers: [],
   providers: [],
