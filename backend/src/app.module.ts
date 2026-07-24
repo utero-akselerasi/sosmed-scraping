@@ -10,6 +10,8 @@ import { PostsModule } from './modules/posts/posts.module';
 import { PlatformsModule } from './modules/platforms/platforms.module';
 import { InfluencersModule } from './modules/influencers/influencers.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { KeywordsModule } from './modules/keywords/keywords.module';
+import { UsersModule } from './modules/users/users.module';
 import {
   User,
   Platform,
@@ -76,6 +78,8 @@ import {
     PlatformsModule,
     InfluencersModule,
     AnalyticsModule,
+    KeywordsModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],
