@@ -27,6 +27,7 @@ import { User, UserRole } from '../../common/entities/user.entity';
 import {
   CreateUserDto,
   UpdateUserDto,
+  UpdateProfileDto,
   ChangePasswordDto,
   UserResponseDto,
   GetUsersQueryDto,
@@ -39,6 +40,40 @@ import {
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully', type: UserResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getProfile(@GetUser() user: User): Promise<UserResponseDto> {
+    return this.usersService.findOne(user.id);
+  }
+
+  @Patch('profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully', type: UserResponseDto })
+  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(
+    @GetUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.updateProfile(user.id, updateProfileDto);
+  }
+
+  @Patch('profile/password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiResponse({ status: 204, description: 'Password changed successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or incorrect password' })
+  async changeMyPassword(
+    @GetUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
+    return this.usersService.changePassword(user.id, changePasswordDto);
+  }
 
   @Post()
   @UseGuards(RolesGuard)

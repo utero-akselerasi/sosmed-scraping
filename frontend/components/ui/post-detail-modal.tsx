@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { X, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, Calendar, User } from 'lucide-react';
 import { Post } from '@/types';
@@ -21,11 +21,11 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-              {post.authorName?.charAt(0).toUpperCase() || '?'}
+              {post.influencerName?.charAt(0).toUpperCase() || '?'}
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{post.authorName}</h2>
-              <p className="text-sm text-gray-500">@{post.authorUsername}</p>
+              <h2 className="text-lg font-semibold text-gray-900">{post.influencerName}</h2>
+              <p className="text-sm text-gray-500">@{post.influencerUsername}</p>
             </div>
           </div>
           <button
@@ -40,17 +40,12 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           {/* Platform & Sentiment Badges */}
           <div className="flex items-center space-x-2 mb-4">
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlatformColor(post.platform?.name || '')}`}>
-              {post.platform?.name}
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlatformColor(post.platformName || '')}`}>
+              {post.platformName}
             </span>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSentimentColor(post.sentiment as SentimentType)}`}>
               {post.sentiment}
             </span>
-            {post.isVerified && (
-              <span className="text-blue-500 text-sm" title="Verified Account">
-                ✓ Verified
-              </span>
-            )}
           </div>
 
           {/* Post Content */}
@@ -125,8 +120,8 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
               <div className="flex items-center text-gray-600">
                 <Calendar className="w-4 h-4 mr-2" />
                 <span className="font-medium mr-2">Published:</span>
-                <span>{new Date(post.publishedAt).toLocaleString()}</span>
-                <span className="ml-2 text-gray-500">({formatRelativeTime(post.publishedAt)})</span>
+                <span>{new Date(post.postedAt).toLocaleString()}</span>
+                <span className="ml-2 text-gray-500">({formatRelativeTime(post.postedAt)})</span>
               </div>
               <div className="flex items-center text-gray-600">
                 <User className="w-4 h-4 mr-2" />
@@ -135,7 +130,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
               </div>
               {post.location && (
                 <div className="flex items-center text-gray-600">
-                  <span className="mr-2">📍</span>
+                  <span className="mr-2">??</span>
                   <span className="font-medium mr-2">Location:</span>
                   <span>{post.location}</span>
                 </div>
@@ -165,3 +160,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
     </div>
   );
 }
+
+
+
+

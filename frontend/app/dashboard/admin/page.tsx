@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -221,7 +221,7 @@ export default function AdminPage() {
           Platform Status
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {platforms?.map((platform) => (
+          {platforms?.map((platform: any) => (
             <div key={platform.id} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <p className="font-medium text-gray-900">{platform.name}</p>

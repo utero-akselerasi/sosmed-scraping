@@ -21,6 +21,8 @@ import {
   InfluencerResponseDto,
   InfluencerDetailDto,
   PaginatedInfluencersResponseDto,
+  EngagementDataDto,
+  ContentTypeDistributionDto,
 } from './dto/influencers.dto';
 
 @ApiTags('Influencers')
@@ -93,5 +95,39 @@ export class InfluencersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getInfluencerById(@Param('id') id: string): Promise<InfluencerDetailDto> {
     return this.influencersService.getInfluencerById(id);
+  }
+
+  @Get(':id/engagement')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get influencer engagement time-series data' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days to fetch', example: 30 })
+  @ApiResponse({
+    status: 200,
+    description: 'Engagement data retrieved successfully',
+    type: [EngagementDataDto],
+  })
+  @ApiResponse({ status: 404, description: 'Influencer not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getInfluencerEngagement(
+    @Param('id') id: string,
+    @Query('days') days?: number,
+  ): Promise<EngagementDataDto[]> {
+    return this.influencersService.getInfluencerEngagement(id, days || 30);
+  }
+
+  @Get(':id/content-types')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get influencer content type distribution' })
+  @ApiResponse({
+    status: 200,
+    description: 'Content type distribution retrieved successfully',
+    type: [ContentTypeDistributionDto],
+  })
+  @ApiResponse({ status: 404, description: 'Influencer not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getInfluencerContentTypes(
+    @Param('id') id: string,
+  ): Promise<ContentTypeDistributionDto[]> {
+    return this.influencersService.getInfluencerContentTypes(id);
   }
 }

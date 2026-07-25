@@ -135,3 +135,31 @@ export class PaginatedInfluencersResponseDto {
     totalPages: number;
   };
 }
+
+export class EngagementDataDto {
+  @ApiProperty({ description: 'Date of the data point' })
+  date: string;
+
+  @ApiProperty({ description: 'Total likes on this date' })
+  likes: number;
+
+  @ApiProperty({ description: 'Total comments on this date' })
+  comments: number;
+
+  @ApiProperty({ description: 'Total shares on this date' })
+  shares: number;
+
+  @ApiProperty({ description: 'Engagement score on this date' })
+  engagementScore: number;
+}
+
+export class ContentTypeDistributionDto {
+  @ApiProperty({ description: 'Content type (e.g., image, video, carousel)' })
+  type: string;
+
+  @ApiProperty({ description: 'Number of posts with this type' })
+  count: number;
+
+  @ApiProperty({ description: 'Percentage of total posts' })
+  percentage: number;
+}

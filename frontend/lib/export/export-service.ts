@@ -1,4 +1,4 @@
-﻿// Export utilities for CSV and Excel downloads
+// Export utilities for CSV and Excel downloads
 
 export interface ExportColumn {
   key: string;
@@ -172,11 +172,7 @@ export class ExportService {
         columns = [
           { key: 'hashtag', header: 'Hashtag' },
           { key: 'count', header: 'Count' },
-          { 
-            key: 'rank', 
-            header: 'Rank',
-            format: (v, idx) => String(idx + 1)
-          },
+          { key: 'rank', header: 'Rank' },
         ];
         break;
     }
@@ -222,3 +218,5 @@ export class ExportService {
     this.downloadCSV(data, columns, filename);
   }
 }
+
+

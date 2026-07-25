@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -51,7 +51,7 @@ export default function InfluencersPage() {
 
   const handleExportJSON = () => {
     if (influencersData?.data) {
-      ExportService.exportInfluencersJSON(influencersData.data);
+      ExportService.exportInfluencers(influencersData.data);
     }
   };
 
@@ -88,13 +88,13 @@ export default function InfluencersPage() {
                 <div className="flex flex-col items-center text-center">
                   <div className="relative mb-3">
                     <div className="w-16 h-16 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center text-purple-900 font-bold text-2xl">
-                      {influencer.name.charAt(0).toUpperCase()}
+                      {influencer.fullName.charAt(0).toUpperCase()}
                     </div>
                     <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-purple-900 font-bold text-sm">
                       #{index + 1}
                     </div>
                   </div>
-                  <p className="font-semibold text-sm mb-1 truncate w-full">{influencer.name}</p>
+                  <p className="font-semibold text-sm mb-1 truncate w-full">{influencer.fullName}</p>
                   <p className="text-xs opacity-90 mb-2">@{influencer.username}</p>
                   <div className="w-full space-y-1">
                     <div className="flex items-center justify-between text-xs">
@@ -103,7 +103,7 @@ export default function InfluencersPage() {
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="opacity-80">Engagement</span>
-                      <span className="font-semibold">{influencer.avgEngagementRate?.toFixed(1)}%</span>
+                      <span className="font-semibold">{influencer.engagementRate?.toFixed(1)}%</span>
                     </div>
                   </div>
                 </div>
@@ -184,23 +184,23 @@ export default function InfluencersPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform">
-                      {influencer.name.charAt(0).toUpperCase()}
+                      {influencer.fullName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{influencer.name}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{influencer.fullName}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">@{influencer.username}</p>
                     </div>
                   </div>
                   {influencer.isVerified && (
                     <span className="text-blue-500" title="Verified">
-                      ✓
+                      ?
                     </span>
                   )}
                 </div>
 
                 <div className="mb-4">
                   <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-xs font-medium">
-                    {influencer.platform?.name}
+                    {influencer.platformName}
                   </span>
                 </div>
 
@@ -216,7 +216,7 @@ export default function InfluencersPage() {
                     <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400 mx-auto mb-1" />
                     <p className="text-xs text-gray-600 dark:text-gray-400">Engagement</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {influencer.avgEngagementRate?.toFixed(1)}%
+                      {influencer.engagementRate?.toFixed(1)}%
                     </p>
                   </div>
                 </div>
@@ -229,15 +229,15 @@ export default function InfluencersPage() {
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Likes</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Followers</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {formatCompactNumber(influencer.totalLikes || 0)}
+                      {formatCompactNumber(influencer.followersCount)}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Comments</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Engagement</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {formatCompactNumber(influencer.totalComments || 0)}
+                      {influencer.engagementRate.toFixed(1) + "%"}
                     </p>
                   </div>
                 </div>
@@ -285,3 +285,4 @@ export default function InfluencersPage() {
     </div>
   );
 }
+

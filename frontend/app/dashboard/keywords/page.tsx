@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -147,13 +147,13 @@ export default function KeywordsPage() {
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600">Active Keywords</p>
           <p className="text-2xl font-bold text-green-600">
-            {keywordsData?.data?.filter((k) => k.isActive).length || 0}
+            {keywordsData?.data?.filter((k: any) => k.isActive).length || 0}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600">Inactive Keywords</p>
           <p className="text-2xl font-bold text-gray-600">
-            {keywordsData?.data?.filter((k) => !k.isActive).length || 0}
+            {keywordsData?.data?.filter((k: any) => !k.isActive).length || 0}
           </p>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function KeywordsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {keywordsData?.data?.map((keyword) => (
+              {keywordsData?.data?.map((keyword: any) => (
                 <tr key={keyword.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

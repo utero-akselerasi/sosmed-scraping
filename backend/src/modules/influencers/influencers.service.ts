@@ -9,6 +9,8 @@ import {
   InfluencerResponseDto,
   InfluencerDetailDto,
   PaginatedInfluencersResponseDto,
+  EngagementDataDto,
+  ContentTypeDistributionDto,
 } from './dto/influencers.dto';
 
 @Injectable()
@@ -155,6 +157,93 @@ export class InfluencersService {
     return influencers.map((influencer) =>
       this.transformToResponseDto(influencer),
     );
+  }
+
+  async getInfluencerEngagement(influencerId: string, days: number = 30): Promise<EngagementDataDto[]> {
+    // Verify influencer exists
+    const influencer = await this.influencersRepository.findOne({
+      where: { id: influencerId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException(`Influencer with ID ${influencerId} not found`);
+    }
+
+    // Get engagement data grouped by date
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const engagementData = await this.postsRepository
+      .createQueryBuilder('post')
+      .select("DATE(post.publishedAt)", 'date')
+      .addSelect('COALESCE(SUM(post.likesCount), 0)', 'likes')
+      .addSelect('COALESCE(SUM(post.commentsCount), 0)', 'comments')
+      .addSelect('COALESCE(SUM(post.sharesCount), 0)', 'shares')
+      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'engagementScore')
+      .where('post.influencerId = :influencerId', { influencerId })
+      .andWhere('post.publishedAt >= :startDate', { startDate })
+      .groupBy('DATE(post.publishedAt)')
+      .orderBy('DATE(post.publishedAt)', 'ASC')
+      .getRawMany();
+
+    return engagementData.map((data) => ({
+      date: data.date,
+      likes: parseInt(data.likes) || 0,
+      comments: parseInt(data.comments) || 0,
+      shares: parseInt(data.shares) || 0,
+      engagementScore: parseFloat(data.engagementScore) || 0,
+    }));
+  }
+
+  async getInfluencerContentTypes(influencerId: string): Promise<ContentTypeDistributionDto[]> {
+    // Verify influencer exists
+    const influencer = await this.influencersRepository.findOne({
+      where: { id: influencerId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException(`Influencer with ID ${influencerId} not found`);
+    }
+
+    // Get total posts count
+    const totalPosts = await this.postsRepository
+      .createQueryBuilder('post')
+      .where('post.influencerId = :influencerId', { influencerId })
+      .getCount();
+
+    if (totalPosts === 0) {
+      return [];
+    }
+
+    // Get content type distribution
+    // Note: contentType field might not exist in current schema
+    // This is a placeholder implementation that uses post data patterns
+    const contentTypeData = await this.postsRepository
+      .createQueryBuilder('post')
+      .select(
+        "CASE " +
+        "WHEN post.mediaUrl IS NOT NULL AND post.mediaUrl LIKE '%.mp4%' THEN 'video' " +
+        "WHEN post.mediaUrl IS NOT NULL AND post.mediaUrl LIKE '%.jpg%' THEN 'image' " +
+        "WHEN post.mediaUrl IS NOT NULL AND post.mediaUrl LIKE '%.png%' THEN 'image' " +
+        "WHEN post.mediaUrl IS NOT NULL THEN 'media' " +
+        "ELSE 'text' " +
+        "END",
+        'type'
+      )
+      .addSelect('COUNT(*)', 'count')
+      .where('post.influencerId = :influencerId', { influencerId })
+      .groupBy('type')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    return contentTypeData.map((data) => {
+      const count = parseInt(data.count) || 0;
+      return {
+        type: data.type,
+        count,
+        percentage: parseFloat(((count / totalPosts) * 100).toFixed(2)),
+      };
+    });
   }
 
   private transformToResponseDto(influencer: Influencer): InfluencerResponseDto {

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -87,10 +87,10 @@ export default function Sidebar() {
           <div className="px-6 py-4 border-b border-gray-700">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                {user?.fullName?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                <p className="text-sm font-medium text-white truncate">{user?.fullName}</p>
                 <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
               </div>
             </div>

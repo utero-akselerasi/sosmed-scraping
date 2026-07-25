@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -83,7 +83,7 @@ export default function PlatformsPage() {
 
       {/* Platform Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {overview?.platformStats?.map((platform) => (
+        {overview?.platformStats?.map((platform: any) => (
           <div
             key={platform.platformId}
             className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow"

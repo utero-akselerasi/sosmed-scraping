@@ -7,6 +7,7 @@ import { User } from '../../common/entities/user.entity';
 import {
   CreateUserDto,
   UpdateUserDto,
+  UpdateProfileDto,
   ChangePasswordDto,
   UserResponseDto,
   GetUsersQueryDto,
@@ -147,6 +148,37 @@ export class UsersService {
     return this.transformToResponseDto(user);
   }
 
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<UserResponseDto> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if new email already exists (if being updated)
+    if (updateProfileDto.email && updateProfileDto.email !== user.email) {
+      const existingUser = await this.usersRepository.findOne({
+        where: { email: updateProfileDto.email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('Email already exists');
+      }
+
+      user.email = updateProfileDto.email;
+    }
+
+    if (updateProfileDto.fullName) {
+      user.fullName = updateProfileDto.fullName;
+    }
+
+    await this.usersRepository.save(user);
+
+    return this.transformToResponseDto(user);
+  }
+
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
     const { currentPassword, newPassword } = changePasswordDto;
 
@@ -180,9 +212,6 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-
-    // Prevent deleting yourself (would need current user context)
-    // This should be handled in controller with @GetUser() decorator
 
     await this.usersRepository.remove(user);
   }

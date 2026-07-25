@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -7,7 +7,7 @@ import { TrendingUp, BarChart3, Hash, Heart, Activity, PieChart } from 'lucide-r
 import { SentimentBarChart } from '@/components/charts/sentiment-bar-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
 import { TrendChart } from '@/components/charts/trend-chart';
-import { EngagementAreaChart } from '@/components/charts/engagement-area-chart';
+import { EngagementAreaChart } from '@/components/charts/area-chart';
 
 export default function AnalyticsPage() {
   const { data: sentiment } = useQuery({
@@ -38,7 +38,7 @@ export default function AnalyticsPage() {
   ];
 
   // Prepare sentiment by platform data for bar chart
-  const platformSentimentData = sentiment?.byPlatform?.map((platform) => ({
+  const platformSentimentData = sentiment?.byPlatform?.map((platform: any) => ({
     platform: platform.platformName,
     positive: platform.positive,
     neutral: platform.neutral,
@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
   // Format trend data for charts
   const dailyTrendData = trends?.dailyPosts?.slice(-14).map((item: any) => ({
     date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    posts: item.count,
+    count: item.count,
     engagement: item.engagement,
   })) || [];
 
@@ -154,14 +154,7 @@ export default function AnalyticsPage() {
 
         {/* Posts Trend */}
         <div className="bg-white rounded-lg shadow p-6">
-          <TrendChart 
-            data={dailyTrendData}
-            title="Posts & Engagement Trend (14 Days)"
-            dataKey1="posts"
-            dataKey2="engagement"
-            label1="Posts"
-            label2="Engagement"
-          />
+          <TrendChart data={dailyTrendData} title="Posts & Engagement Trend (14 Days)" />
         </div>
       </div>
 
@@ -234,7 +227,7 @@ export default function AnalyticsPage() {
           Top Trending Hashtags
         </h2>
         <div className="flex flex-wrap gap-3">
-          {topHashtags?.slice(0, 30).map((item, idx) => {
+          {topHashtags?.slice(0, 30).map((item: any, idx: number) => {
             const size = Math.max(12, Math.min(20, 12 + (item.count / 10)));
             const opacity = Math.max(0.5, Math.min(1, item.count / 50));
             return (
@@ -266,7 +259,7 @@ export default function AnalyticsPage() {
             Top Engaging Posts
           </h2>
           <div className="space-y-3">
-            {engagement.topEngagingPosts.slice(0, 5).map((post, idx) => (
+            {engagement.topEngagingPosts.slice(0, 5).map((post: any, idx: number) => (
               <div key={post.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-all">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -287,9 +280,9 @@ export default function AnalyticsPage() {
                     </div>
                     <p className="text-sm text-gray-700 line-clamp-2">{post.content}</p>
                     <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                      <span>❤️ {formatCompactNumber(post.likesCount || 0)}</span>
-                      <span>💬 {formatCompactNumber(post.commentsCount || 0)}</span>
-                      <span>🔁 {formatCompactNumber(post.sharesCount || 0)}</span>
+                      <span>?? {formatCompactNumber(post.likesCount || 0)}</span>
+                      <span>?? {formatCompactNumber(post.commentsCount || 0)}</span>
+                      <span>?? {formatCompactNumber(post.sharesCount || 0)}</span>
                     </div>
                   </div>
                   <div className="ml-4 text-right">
@@ -312,7 +305,7 @@ export default function AnalyticsPage() {
           Detailed Sentiment by Platform
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sentiment?.byPlatform?.map((platform) => {
+          {sentiment?.byPlatform?.map((platform: any) => {
             const total = platform.positive + platform.neutral + platform.negative;
             const positivePercent = total > 0 ? (platform.positive / total) * 100 : 0;
             const neutralPercent = total > 0 ? (platform.neutral / total) * 100 : 0;
@@ -399,3 +392,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+

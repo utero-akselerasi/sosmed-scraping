@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -34,13 +34,13 @@ export default function UsersPage() {
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600">Active Users</p>
           <p className="text-2xl font-bold text-green-600">
-            {usersData?.data?.filter((u) => u.isActive).length || 0}
+            {usersData?.data?.filter((u: any) => u.isActive).length || 0}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600">Admins</p>
           <p className="text-2xl font-bold text-purple-600">
-            {usersData?.data?.filter((u) => u.role === 'admin').length || 0}
+            {usersData?.data?.filter((u: any) => u.role === 'admin').length || 0}
           </p>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {usersData?.data?.map((user) => (
+              {usersData?.data?.map((user: any) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>

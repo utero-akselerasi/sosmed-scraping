@@ -49,6 +49,19 @@ export class UpdateUserDto {
   isActive?: boolean;
 }
 
+export class UpdateProfileDto {
+  @ApiPropertyOptional({ example: 'user@example.com' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ example: 'John Doe Updated' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  fullName?: string;
+}
+
 export class ChangePasswordDto {
   @ApiProperty({ example: 'oldpassword123' })
   @IsString()
