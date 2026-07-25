@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "mbois-frontend",
   "version": "1.0.0",
   "description": "Festival Mbois Intelligence Platform - Frontend Dashboard",
@@ -11,30 +11,32 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.17.19",
+    "axios": "^1.6.5",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.2.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^0.309.0",
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.3.3",
-    "@tanstack/react-query": "^5.17.19",
-    "axios": "^1.6.5",
-    "zustand": "^4.4.7",
-    "date-fns": "^3.2.0",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.0",
-    "lucide-react": "^0.309.0",
-    "recharts": "^2.10.3",
     "react-hot-toast": "^2.4.1",
-    "class-variance-authority": "^0.7.0"
+    "recharts": "^2.10.3",
+    "tailwind-merge": "^2.2.0",
+    "typescript": "^5.3.3",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.33",
-    "tailwindcss": "^3.4.1",
     "eslint": "^8.56.0",
-    "eslint-config-next": "^14.1.0"
+    "eslint-config-next": "^14.1.0",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1"
   },
   "engines": {
     "node": ">=18.0.0"
