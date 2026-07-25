@@ -8,12 +8,16 @@ import { Search, Filter, ExternalLink } from 'lucide-react';
 import { Post, SentimentType } from '@/types';
 import { ExportDropdown } from '@/components/export-button';
 import { ExportService } from '@/lib/export/export-service';
+import { PostDetailModal } from '@/components/ui/post-detail-modal';
+import { useToast } from '@/components/ui/toast';
 
 export default function PostsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [sentiment, setSentiment] = useState<string>('');
   const [platformId, setPlatformId] = useState<string>('');
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const { success, error } = useToast();
 
   const { data: postsData, isLoading } = useQuery({
     queryKey: ['posts', page, search, sentiment, platformId],
@@ -47,15 +51,29 @@ export default function PostsPage() {
   };
 
   const handleExportCSV = () => {
-    if (postsData?.data) {
-      ExportService.exportPosts(postsData.data);
+    try {
+      if (postsData?.data) {
+        ExportService.exportPosts(postsData.data);
+        success('Export Successful', `Exported ${postsData.data.length} posts to CSV`);
+      }
+    } catch (err) {
+      error('Export Failed', 'Failed to export posts. Please try again.');
     }
   };
 
   const handleExportJSON = () => {
-    if (postsData?.data) {
-      ExportService.downloadJSON(postsData.data, `posts_export_${new Date().toISOString().split('T')[0]}`);
+    try {
+      if (postsData?.data) {
+        ExportService.downloadJSON(postsData.data, `posts_export_${new Date().toISOString().split('T')[0]}`);
+        success('Export Successful', `Exported ${postsData.data.length} posts to JSON`);
+      }
+    } catch (err) {
+      error('Export Failed', 'Failed to export posts. Please try again.');
     }
+  };
+
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
   };
 
   return (
@@ -178,7 +196,11 @@ export default function PostsPage() {
         <>
           <div className="space-y-4">
             {postsData.data.map((post: Post) => (
-              <div key={post.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6">
+              <div 
+                key={post.id} 
+                className="bg-white rounded-lg shadow hover:shadow-lg transition-all p-6 cursor-pointer"
+                onClick={() => handlePostClick(post)}
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
@@ -199,15 +221,18 @@ export default function PostsPage() {
                   </div>
                 </div>
 
-                <p className="text-gray-700 mb-3">{post.content}</p>
+                <p className="text-gray-700 mb-3 line-clamp-3">{post.content}</p>
 
                 {post.hashtags && post.hashtags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {post.hashtags.map((tag, idx) => (
+                    {post.hashtags.slice(0, 5).map((tag, idx) => (
                       <span key={idx} className="text-blue-600 text-sm">
                         #{tag}
                       </span>
                     ))}
+                    {post.hashtags.length > 5 && (
+                      <span className="text-gray-500 text-sm">+{post.hashtags.length - 5} more</span>
+                    )}
                   </div>
                 )}
 
@@ -231,6 +256,7 @@ export default function PostsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
@@ -276,6 +302,14 @@ export default function PostsPage() {
           <p className="text-gray-500 text-lg">No posts found</p>
           <p className="text-gray-400 text-sm mt-2">Try adjusting your filters</p>
         </div>
+      )}
+
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <PostDetailModal 
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
       )}
     </div>
   );
