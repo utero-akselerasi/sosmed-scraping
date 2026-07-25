@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { TrendChart } from '@/components/charts/trend-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
-import { SentimentBarChart } from '@/components/charts/sentiment-bar-chart';
+import { ExportButton } from '@/components/export-button';
+import { ExportService } from '@/lib/export/export-service';
 
 export default function DashboardPage() {
   const { data: overview, isLoading } = useQuery({
@@ -32,6 +33,12 @@ export default function DashboardPage() {
     queryKey: ['trends'],
     queryFn: () => apiClient.getTrends(),
   });
+
+  const handleExport = () => {
+    if (overview) {
+      ExportService.exportDashboard(overview);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -75,12 +82,6 @@ export default function DashboardPage() {
 
   const sentimentData = overview?.sentimentDistribution;
 
-  // Prepare data for pie chart
-  const platformPieData = platforms?.map((p) => ({
-    name: p.name,
-    value: 1,
-  })) || [];
-
   // Prepare sentiment pie data
   const sentimentPieData = [
     { name: 'Positive', value: sentimentData?.positive || 0 },
@@ -98,11 +99,18 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Social media analytics for Festival Mbois
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Social media analytics for Festival Mbois
+          </p>
+        </div>
+        <ExportButton 
+          onExport={handleExport}
+          label="Export Dashboard"
+          disabled={!overview}
+        />
       </div>
 
       {/* Stats Grid */}
@@ -154,48 +162,42 @@ export default function DashboardPage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-green-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-900">Positive</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {formatNumber(sentimentData?.positive || 0)}
-                </p>
-                <p className="text-xs text-green-700">
-                  {formatPercentage(sentimentData?.positivePercentage || 0)}
-                </p>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-green-900">Positive</p>
               <div className="text-green-500 text-3xl">😊</div>
             </div>
+            <p className="text-3xl font-bold text-green-600">
+              {formatNumber(sentimentData?.positive || 0)}
+            </p>
+            <p className="text-xs text-green-700 mt-1">
+              {formatPercentage((sentimentData?.positive || 0) / ((sentimentData?.positive || 0) + (sentimentData?.neutral || 0) + (sentimentData?.negative || 0)))}
+            </p>
           </div>
 
           <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Neutral</p>
-                <p className="text-2xl font-bold text-gray-600">
-                  {formatNumber(sentimentData?.neutral || 0)}
-                </p>
-                <p className="text-xs text-gray-700">
-                  {formatPercentage(sentimentData?.neutralPercentage || 0)}
-                </p>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-900">Neutral</p>
               <div className="text-gray-500 text-3xl">😐</div>
             </div>
+            <p className="text-3xl font-bold text-gray-600">
+              {formatNumber(sentimentData?.neutral || 0)}
+            </p>
+            <p className="text-xs text-gray-700 mt-1">
+              {formatPercentage((sentimentData?.neutral || 0) / ((sentimentData?.positive || 0) + (sentimentData?.neutral || 0) + (sentimentData?.negative || 0)))}
+            </p>
           </div>
 
           <div className="p-4 bg-red-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-red-900">Negative</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {formatNumber(sentimentData?.negative || 0)}
-                </p>
-                <p className="text-xs text-red-700">
-                  {formatPercentage(sentimentData?.negativePercentage || 0)}
-                </p>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-red-900">Negative</p>
               <div className="text-red-500 text-3xl">😞</div>
             </div>
+            <p className="text-3xl font-bold text-red-600">
+              {formatNumber(sentimentData?.negative || 0)}
+            </p>
+            <p className="text-xs text-red-700 mt-1">
+              {formatPercentage((sentimentData?.negative || 0) / ((sentimentData?.positive || 0) + (sentimentData?.neutral || 0) + (sentimentData?.negative || 0)))}
+            </p>
           </div>
         </div>
       </div>
