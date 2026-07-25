@@ -13,8 +13,11 @@ import {
   Globe,
   UserCircle,
   LogOut,
+  Shield,
+  User,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -24,6 +27,7 @@ const navigation = [
   { name: 'Platforms', href: '/dashboard/platforms', icon: Globe },
   { name: 'Keywords', href: '/dashboard/keywords', icon: Hash },
   { name: 'Users', href: '/dashboard/users', icon: UserCircle, adminOnly: true },
+  { name: 'Admin', href: '/dashboard/admin', icon: Shield, adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -35,10 +39,11 @@ export function Sidebar() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-white">
+    <div className="flex flex-col h-full bg-gray-900 dark:bg-gray-950 text-white border-r border-gray-800 dark:border-gray-900">
       {/* Logo */}
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-800">
+      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-800 dark:border-gray-900">
         <h1 className="text-xl font-bold">Festival Mbois</h1>
+        <ThemeToggle />
       </div>
 
       {/* Navigation */}
@@ -52,8 +57,8 @@ export function Sidebar() {
               className={cn(
                 'flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors',
                 isActive
-                  ? 'bg-gray-800 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-gray-800 dark:bg-gray-900 text-white'
+                  : 'text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-900 hover:text-white'
               )}
             >
               <item.icon className="w-5 h-5 mr-3" />
@@ -63,17 +68,31 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User Info & Logout */}
-      <div className="border-t border-gray-800 p-4">
+      {/* User Info & Actions */}
+      <div className="border-t border-gray-800 dark:border-gray-900 p-4 space-y-2">
         <div className="flex items-center mb-3">
           <div className="flex-1">
             <p className="text-sm font-medium">{user?.fullName}</p>
             <p className="text-xs text-gray-400">{user?.role}</p>
           </div>
         </div>
+        
+        <Link
+          href="/dashboard/profile"
+          className={cn(
+            'flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors',
+            pathname === '/dashboard/profile'
+              ? 'bg-gray-800 dark:bg-gray-900 text-white'
+              : 'text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-900 hover:text-white'
+          )}
+        >
+          <User className="w-5 h-5 mr-3" />
+          Profile
+        </Link>
+        
         <button
           onClick={logout}
-          className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-800 hover:text-white transition-colors"
+          className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-300 dark:text-gray-400 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-900 hover:text-white transition-colors"
         >
           <LogOut className="w-5 h-5 mr-3" />
           Logout

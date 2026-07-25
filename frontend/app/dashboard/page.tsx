@@ -17,8 +17,17 @@ import { TrendChart } from '@/components/charts/trend-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
 import { ExportButton } from '@/components/export-button';
 import { ExportService } from '@/lib/export/export-service';
+import { useAutoRefresh } from '@/hooks/use-auto-refresh';
+import { AutoRefreshToggle } from '@/components/auto-refresh-toggle';
 
 export default function DashboardPage() {
+  // Auto-refresh hook
+  const autoRefresh = useAutoRefresh({
+    interval: 30,
+    enabled: false,
+    queryKeys: ['dashboard-overview', 'platforms', 'trends'],
+  });
+
   const { data: overview, isLoading } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: () => apiClient.getDashboardOverview(),
@@ -45,7 +54,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -99,18 +108,26 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             Social media analytics for Festival Mbois
           </p>
         </div>
-        <ExportButton 
-          onExport={handleExport}
-          label="Export Dashboard"
-          disabled={!overview}
-        />
+        <div className="flex items-center gap-3">
+          <AutoRefreshToggle
+            isEnabled={autoRefresh.isEnabled}
+            countdown={autoRefresh.countdown}
+            onToggle={autoRefresh.toggle}
+            interval={30}
+          />
+          <ExportButton 
+            onExport={handleExport}
+            label="Export Dashboard"
+            disabled={!overview}
+          />
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -118,12 +135,12 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.name}
-            className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900" title={stat.detail}>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.name}</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white" title={stat.detail}>
                   {stat.value}
                 </p>
               </div>
@@ -138,7 +155,7 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trend Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <TrendChart 
             data={dailyTrendData}
             title="Posts Trend (Last 7 Days)"
@@ -146,7 +163,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Sentiment Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <CustomPieChart
             data={sentimentPieData}
             title="Sentiment Distribution"
@@ -156,46 +173,43 @@ export default function DashboardPage() {
       </div>
 
       {/* Sentiment Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Sentiment Breakdown
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-green-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-green-900">Positive</p>
-              <div className="text-green-500 text-3xl">😊</div>
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-green-800 dark:text-green-300">Positive</span>
+              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {sentimentData?.positive || 0}
+              </span>
             </div>
-            <p className="text-3xl font-bold text-green-600">
-              {formatNumber(sentimentData?.positive || 0)}
-            </p>
-            <p className="text-xs text-green-700 mt-1">
+            <p className="mt-2 text-xs text-green-600 dark:text-green-400">
               {formatPercentage((sentimentData?.positive || 0) / ((sentimentData?.positive || 0) + (sentimentData?.neutral || 0) + (sentimentData?.negative || 0)))}
             </p>
           </div>
 
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-900">Neutral</p>
-              <div className="text-gray-500 text-3xl">😐</div>
+          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-300">Neutral</span>
+              <span className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                {sentimentData?.neutral || 0}
+              </span>
             </div>
-            <p className="text-3xl font-bold text-gray-600">
-              {formatNumber(sentimentData?.neutral || 0)}
-            </p>
-            <p className="text-xs text-gray-700 mt-1">
+            <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
               {formatPercentage((sentimentData?.neutral || 0) / ((sentimentData?.positive || 0) + (sentimentData?.neutral || 0) + (sentimentData?.negative || 0)))}
             </p>
           </div>
 
-          <div className="p-4 bg-red-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-red-900">Negative</p>
-              <div className="text-red-500 text-3xl">😞</div>
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-red-800 dark:text-red-300">Negative</span>
+              <span className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {sentimentData?.negative || 0}
+              </span>
             </div>
-            <p className="text-3xl font-bold text-red-600">
-              {formatNumber(sentimentData?.negative || 0)}
-            </p>
-            <p className="text-xs text-red-700 mt-1">
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
               {formatPercentage((sentimentData?.negative || 0) / ((sentimentData?.positive || 0) + (sentimentData?.neutral || 0) + (sentimentData?.negative || 0)))}
             </p>
           </div>
@@ -205,35 +219,35 @@ export default function DashboardPage() {
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Recent Activity
           </h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-900">Last 24 Hours</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Last 24 Hours</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {formatNumber(overview?.recentActivity?.last24Hours || 0)}
                 </p>
               </div>
               <FileText className="w-8 h-8 text-blue-500" />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-900">Last 7 Days</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Last 7 Days</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {formatNumber(overview?.recentActivity?.last7Days || 0)}
                 </p>
               </div>
               <FileText className="w-8 h-8 text-purple-500" />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-900">Last 30 Days</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Last 30 Days</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {formatNumber(overview?.recentActivity?.last30Days || 0)}
                 </p>
               </div>
@@ -243,8 +257,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Platform */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Platform Stats
           </h2>
           <div className="space-y-3">
@@ -259,18 +273,18 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <ThumbsUp className="w-5 h-5 text-gray-600 mb-2" />
-                <p className="text-xs text-gray-600">Total Engagement</p>
-                <p className="text-lg font-bold text-gray-900">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <ThumbsUp className="w-5 h-5 text-gray-600 dark:text-gray-400 mb-2" />
+                <p className="text-xs text-gray-600 dark:text-gray-400">Total Engagement</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
                   {formatCompactNumber(overview?.totalEngagement || 0)}
                 </p>
               </div>
 
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <Globe className="w-5 h-5 text-gray-600 mb-2" />
-                <p className="text-xs text-gray-600">Platforms</p>
-                <p className="text-lg font-bold text-gray-900">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <Globe className="w-5 h-5 text-gray-600 dark:text-gray-400 mb-2" />
+                <p className="text-xs text-gray-600 dark:text-gray-400">Platforms</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
                   {platforms?.length || 0} Active
                 </p>
               </div>
@@ -280,30 +294,30 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Engagement Overview
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <ThumbsUp className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Likes</p>
-            <p className="text-xl font-bold text-gray-900">-</p>
+          <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <ThumbsUp className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 dark:text-gray-400">Likes</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <MessageCircle className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Comments</p>
-            <p className="text-xl font-bold text-gray-900">-</p>
+          <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <MessageCircle className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 dark:text-gray-400">Comments</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
           </div>
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <Share2 className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Shares</p>
-            <p className="text-xl font-bold text-gray-900">-</p>
+          <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <Share2 className="w-6 h-6 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 dark:text-gray-400">Shares</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
           </div>
-          <div className="text-center p-4 bg-orange-50 rounded-lg">
-            <Eye className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Views</p>
-            <p className="text-xl font-bold text-gray-900">-</p>
+          <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+            <Eye className="w-6 h-6 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 dark:text-gray-400">Views</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
           </div>
         </div>
       </div>
