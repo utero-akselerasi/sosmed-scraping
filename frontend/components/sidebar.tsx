@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  Settings,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -30,6 +31,7 @@ export default function Sidebar() {
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'analyst', 'viewer'] },
     { name: 'Keywords', href: '/dashboard/keywords', icon: Hash, roles: ['admin'] },
     { name: 'Users', href: '/dashboard/users', icon: UserCircle, roles: ['admin'] },
+    { name: 'Admin', href: '/dashboard/admin', icon: Settings, roles: ['admin'] },
   ];
 
   const filteredNavigation = navigation.filter((item) =>
