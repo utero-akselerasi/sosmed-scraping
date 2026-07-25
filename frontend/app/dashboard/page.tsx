@@ -13,6 +13,9 @@ import {
   Share2,
   Eye
 } from 'lucide-react';
+import { TrendChart } from '@/components/charts/trend-chart';
+import { CustomPieChart } from '@/components/charts/pie-chart';
+import { SentimentBarChart } from '@/components/charts/sentiment-bar-chart';
 
 export default function DashboardPage() {
   const { data: overview, isLoading } = useQuery({
@@ -23,6 +26,11 @@ export default function DashboardPage() {
   const { data: platforms } = useQuery({
     queryKey: ['platforms'],
     queryFn: () => apiClient.getPlatforms(),
+  });
+
+  const { data: trends } = useQuery({
+    queryKey: ['trends'],
+    queryFn: () => apiClient.getTrends(),
   });
 
   if (isLoading) {
@@ -67,6 +75,26 @@ export default function DashboardPage() {
 
   const sentimentData = overview?.sentimentDistribution;
 
+  // Prepare data for pie chart
+  const platformPieData = platforms?.map((p) => ({
+    name: p.name,
+    value: 1,
+  })) || [];
+
+  // Prepare sentiment pie data
+  const sentimentPieData = [
+    { name: 'Positive', value: sentimentData?.positive || 0 },
+    { name: 'Neutral', value: sentimentData?.neutral || 0 },
+    { name: 'Negative', value: sentimentData?.negative || 0 },
+  ];
+
+  // Format trend data for charts
+  const dailyTrendData = trends?.dailyPosts?.slice(-7).map((item: any) => ({
+    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    count: item.count,
+    engagement: item.engagement,
+  })) || [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -99,10 +127,30 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Trend Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <TrendChart 
+            data={dailyTrendData}
+            title="Posts Trend (Last 7 Days)"
+          />
+        </div>
+
+        {/* Sentiment Pie Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <CustomPieChart
+            data={sentimentPieData}
+            title="Sentiment Distribution"
+            colors={['#10b981', '#6b7280', '#ef4444']}
+          />
+        </div>
+      </div>
+
       {/* Sentiment Distribution */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Sentiment Distribution
+          Sentiment Breakdown
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-green-50 rounded-lg">
@@ -116,7 +164,7 @@ export default function DashboardPage() {
                   {formatPercentage(sentimentData?.positivePercentage || 0)}
                 </p>
               </div>
-              <div className="text-green-500">😊</div>
+              <div className="text-green-500 text-3xl">😊</div>
             </div>
           </div>
 
@@ -131,7 +179,7 @@ export default function DashboardPage() {
                   {formatPercentage(sentimentData?.neutralPercentage || 0)}
                 </p>
               </div>
-              <div className="text-gray-500">😐</div>
+              <div className="text-gray-500 text-3xl">😐</div>
             </div>
           </div>
 
@@ -146,7 +194,7 @@ export default function DashboardPage() {
                   {formatPercentage(sentimentData?.negativePercentage || 0)}
                 </p>
               </div>
-              <div className="text-red-500">😞</div>
+              <div className="text-red-500 text-3xl">😞</div>
             </div>
           </div>
         </div>
