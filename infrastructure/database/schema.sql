@@ -374,7 +374,8 @@ INSERT INTO keywords (keyword, is_active, priority) VALUES
 -- Insert default admin user (password: admin123 - hashed with bcrypt)
 -- Note: Change this in production!
 INSERT INTO users (email, password_hash, full_name, role, is_active) VALUES
-('admin@festivalmbois.com', '$2b$10$rQ8qVZ.KqXJxKxGxJxKxKOZ9YzqYzqYzqYzqYzqYzqYzqYzqYzqY', 'Administrator', 'admin', true);
+('admin@festivalmbois.com', '$2b$10$JS7lxg2W1AK1y25qaqXvEeb3A1re.P5oe0RO3PLuB/f0NqB7uJIPu', 'Administrator', 'admin', true)
+ON CONFLICT (email) DO NOTHING;
 
 -- ============================================
 -- COMMENTS
