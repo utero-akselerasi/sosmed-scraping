@@ -29,7 +29,7 @@ import {
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, typeormConfig],
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: ['.env.local', '.env', '../.env'],
     }),
 
     // Database
@@ -64,8 +64,10 @@ import {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        ttl: configService.get('rateLimit.ttl'),
-        limit: configService.get('rateLimit.max'),
+        throttlers: [{
+          ttl: configService.get('rateLimit.ttl'),
+          limit: configService.get('rateLimit.max'),
+        }],
       }),
     }),
 

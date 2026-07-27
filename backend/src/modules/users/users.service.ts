@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { User } from '../../common/entities/user.entity';
+import { User, UserRole } from '../../common/entities/user.entity';
 import {
   CreateUserDto,
   UpdateUserDto,
@@ -43,7 +43,7 @@ export class UsersService {
       email,
       passwordHash,
       fullName,
-      role: role || 'viewer',
+      role: role || UserRole.VIEWER,
       isActive: true,
     });
 

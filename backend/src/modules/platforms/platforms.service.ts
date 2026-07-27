@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Platform } from '../../common/entities/platform.entity';
 import { Post } from '../../common/entities/post.entity';
 import { Influencer } from '../../common/entities/influencer.entity';
-import { ScrapingJob } from '../../common/entities/scraping-job.entity';
+import { ScrapingJob, CollectionStatus } from '../../common/entities/scraping-job.entity';
 import {
   PlatformResponseDto,
   PlatformStatsDto,
@@ -84,7 +84,7 @@ export class PlatformsService {
 
     // Get last scraped time
     const lastJob = await this.scrapingJobsRepository.findOne({
-      where: { platformId: id, status: 'completed' },
+      where: { platformId: id, status: CollectionStatus.COMPLETED },
       order: { completedAt: 'DESC' },
     });
 
