@@ -1,6 +1,6 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Post } from '../../common/entities/post.entity';
 import { Influencer } from '../../common/entities/influencer.entity';
 import { Platform } from '../../common/entities/platform.entity';
@@ -80,9 +80,9 @@ export class AnalyticsService {
     const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [count24h, count7d, count30d] = await Promise.all([
-      this.postsRepository.count({ where: { postedAt: { $gte: last24Hours } as any } }),
-      this.postsRepository.count({ where: { postedAt: { $gte: last7Days } as any } }),
-      this.postsRepository.count({ where: { postedAt: { $gte: last30Days } as any } }),
+      this.postsRepository.count({ where: { postedAt: MoreThanOrEqual(last24Hours) } }),
+      this.postsRepository.count({ where: { postedAt: MoreThanOrEqual(last7Days) } }),
+      this.postsRepository.count({ where: { postedAt: MoreThanOrEqual(last30Days) } }),
     ]);
 
     return {

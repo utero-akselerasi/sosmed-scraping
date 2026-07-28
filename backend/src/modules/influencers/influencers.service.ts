@@ -175,15 +175,15 @@ export class InfluencersService {
 
     const engagementData = await this.postsRepository
       .createQueryBuilder('post')
-      .select("DATE(post.publishedAt)", 'date')
+      .select("DATE(post.postedAt)", 'date')
       .addSelect('COALESCE(SUM(post.likesCount), 0)', 'likes')
       .addSelect('COALESCE(SUM(post.commentsCount), 0)', 'comments')
       .addSelect('COALESCE(SUM(post.sharesCount), 0)', 'shares')
       .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'engagementScore')
       .where('post.influencerId = :influencerId', { influencerId })
-      .andWhere('post.publishedAt >= :startDate', { startDate })
-      .groupBy('DATE(post.publishedAt)')
-      .orderBy('DATE(post.publishedAt)', 'ASC')
+      .andWhere('post.postedAt >= :startDate', { startDate })
+      .groupBy('DATE(post.postedAt)')
+      .orderBy('DATE(post.postedAt)', 'ASC')
       .getRawMany();
 
     return engagementData.map((data) => ({
@@ -222,10 +222,10 @@ export class InfluencersService {
       .createQueryBuilder('post')
       .select(
         "CASE " +
-        "WHEN post.mediaUrl IS NOT NULL AND post.mediaUrl LIKE '%.mp4%' THEN 'video' " +
-        "WHEN post.mediaUrl IS NOT NULL AND post.mediaUrl LIKE '%.jpg%' THEN 'image' " +
-        "WHEN post.mediaUrl IS NOT NULL AND post.mediaUrl LIKE '%.png%' THEN 'image' " +
-        "WHEN post.mediaUrl IS NOT NULL THEN 'media' " +
+        "WHEN post.mediaUrls IS NOT NULL AND '%.mp4%' = ANY(post.mediaUrls) THEN 'video' " +
+        "WHEN post.mediaUrls IS NOT NULL AND '%.jpg%' = ANY(post.mediaUrls) THEN 'image' " +
+        "WHEN post.mediaUrls IS NOT NULL AND '%.png%' = ANY(post.mediaUrls) THEN 'image' " +
+        "WHEN post.mediaUrls IS NOT NULL THEN 'media' " +
         "ELSE 'text' " +
         "END",
         'type'
