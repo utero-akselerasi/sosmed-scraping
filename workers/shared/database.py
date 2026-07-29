@@ -1,4 +1,5 @@
 ﻿import os
+import json
 import asyncpg
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -91,6 +92,13 @@ class DatabaseManager:
         """Insert post (skip if exists)"""
         async with self.pool.acquire() as conn:
             try:
+                existing = await conn.fetchval(
+                    "SELECT id FROM posts WHERE platform_id = $1 AND platform_post_id = $2 LIMIT 1",
+                    data['platform_id'], data['platform_post_id']
+                )
+                if existing:
+                    return None
+
                 row = await conn.fetchrow("""
                     INSERT INTO posts (
                         platform_id, influencer_id, platform_post_id, post_type,
@@ -98,7 +106,6 @@ class DatabaseManager:
                         shares_count, views_count, sentiment, sentiment_score,
                         hashtags, mentions, location, posted_at, metadata
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-                    ON CONFLICT (platform_id, platform_post_id) DO NOTHING
                     RETURNING id
                 """,
                     data['platform_id'], data['influencer_id'], data['platform_post_id'],
@@ -108,9 +115,9 @@ class DatabaseManager:
                     data.get('views_count', 0), data.get('sentiment'),
                     data.get('sentiment_score'), data.get('hashtags', []),
                     data.get('mentions', []), data.get('location'),
-                    data['posted_at'], data.get('metadata')
+                    data['posted_at'], json.dumps(data.get('metadata')) if data.get('metadata') else None
                 )
-                return row['id'] if row else None
+                return row['id']
             except Exception as e:
                 logger.error(f"Failed to insert post: {e}")
                 return None
