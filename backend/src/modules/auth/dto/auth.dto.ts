@@ -32,6 +32,13 @@ export class RegisterDto {
   password: string;
 }
 
+export class RefreshTokenDto {
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIs...' })
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+}
+
 export class AuthResponseDto {
   @ApiProperty()
   accessToken: string;

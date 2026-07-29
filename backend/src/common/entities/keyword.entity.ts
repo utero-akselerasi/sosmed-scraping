@@ -3,6 +3,7 @@
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   Index,
 } from 'typeorm';
 
@@ -24,6 +25,6 @@ export class Keyword {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @CreateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

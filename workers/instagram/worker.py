@@ -10,6 +10,7 @@ This worker uses multiple approaches to scrape Instagram data:
 
 import os
 import asyncio
+import time
 import re
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -169,7 +170,7 @@ class InstagramWorker:
                     logger.debug(f"Scraped post {post.shortcode} from @{post.owner_username}")
                     
                     # Rate limiting
-                    await asyncio.sleep(1)
+                    time.sleep(1)
                     
                 except Exception as e:
                     logger.error(f"Error processing post: {e}")
