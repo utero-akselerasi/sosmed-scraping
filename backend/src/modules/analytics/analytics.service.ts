@@ -1,9 +1,9 @@
-﻿import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Post } from '../../common/entities/post.entity';
-import { Influencer } from '../../common/entities/influencer.entity';
-import { Platform } from '../../common/entities/platform.entity';
+﻿import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, MoreThanOrEqual } from "typeorm";
+import { Post } from "../../common/entities/post.entity";
+import { Influencer } from "../../common/entities/influencer.entity";
+import { Platform } from "../../common/entities/platform.entity";
 import {
   AnalyticsQueryDto,
   DashboardOverviewDto,
@@ -11,8 +11,7 @@ import {
   TopHashtagDto,
   SentimentAnalyticsDto,
   EngagementAnalyticsDto,
-  TimeSeriesDataPoint,
-} from './dto/analytics.dto';
+} from "./dto/analytics.dto";
 
 @Injectable()
 export class AnalyticsService {
@@ -25,28 +24,48 @@ export class AnalyticsService {
     private platformsRepository: Repository<Platform>,
   ) {}
 
-  async getDashboardOverview(query: AnalyticsQueryDto): Promise<DashboardOverviewDto> {
-    const queryBuilder = this.postsRepository.createQueryBuilder('post');
+  async getDashboardOverview(
+    query: AnalyticsQueryDto,
+  ): Promise<DashboardOverviewDto> {
+    const queryBuilder = this.postsRepository.createQueryBuilder("post");
 
     // Apply date filters
     if (query.startDate) {
-      queryBuilder.andWhere('post.postedAt >= :startDate', { startDate: query.startDate });
+      queryBuilder.andWhere("post.postedAt >= :startDate", {
+        startDate: query.startDate,
+      });
     }
     if (query.endDate) {
-      queryBuilder.andWhere('post.postedAt <= :endDate', { endDate: query.endDate });
+      queryBuilder.andWhere("post.postedAt <= :endDate", {
+        endDate: query.endDate,
+      });
     }
     if (query.platformId) {
-      queryBuilder.andWhere('post.platformId = :platformId', { platformId: query.platformId });
+      queryBuilder.andWhere("post.platformId = :platformId", {
+        platformId: query.platformId,
+      });
     }
 
     // Get overall statistics
     const stats = await queryBuilder
-      .select('COUNT(*)', 'totalPosts')
-      .addSelect('COALESCE(SUM(post.likesCount + post.commentsCount + post.sharesCount), 0)', 'totalEngagement')
-      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'avgEngagementScore')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'positive')", 'sentimentPositive')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'neutral')", 'sentimentNeutral')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'negative')", 'sentimentNegative')
+      .select("COUNT(*)", "totalPosts")
+      .addSelect(
+        "COALESCE(SUM(post.likesCount + post.commentsCount + post.sharesCount), 0)",
+        "totalEngagement",
+      )
+      .addSelect("COALESCE(AVG(post.engagementScore), 0)", "avgEngagementScore")
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'positive')",
+        "sentimentPositive",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'neutral')",
+        "sentimentNeutral",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
+        "sentimentNegative",
+      )
       .getRawOne();
 
     const totalPosts = parseInt(stats.totalPosts) || 0;
@@ -64,12 +83,12 @@ export class AnalyticsService {
 
     // Get top platform
     const topPlatform = await this.postsRepository
-      .createQueryBuilder('post')
-      .leftJoin('post.platform', 'platform')
-      .select('platform.name', 'name')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('platform.name')
-      .orderBy('count', 'DESC')
+      .createQueryBuilder("post")
+      .leftJoin("post.platform", "platform")
+      .select("platform.name", "name")
+      .addSelect("COUNT(*)", "count")
+      .groupBy("platform.name")
+      .orderBy("count", "DESC")
       .limit(1)
       .getRawOne();
 
@@ -80,9 +99,15 @@ export class AnalyticsService {
     const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [count24h, count7d, count30d] = await Promise.all([
-      this.postsRepository.count({ where: { postedAt: { $gte: last24Hours } as any } }),
-      this.postsRepository.count({ where: { postedAt: { $gte: last7Days } as any } }),
-      this.postsRepository.count({ where: { postedAt: { $gte: last30Days } as any } }),
+      this.postsRepository.count({
+        where: { postedAt: MoreThanOrEqual(last24Hours) },
+      }),
+      this.postsRepository.count({
+        where: { postedAt: MoreThanOrEqual(last7Days) },
+      }),
+      this.postsRepository.count({
+        where: { postedAt: MoreThanOrEqual(last30Days) },
+      }),
     ]);
 
     return {
@@ -95,12 +120,15 @@ export class AnalyticsService {
         positive: sentimentPositive,
         neutral: sentimentNeutral,
         negative: sentimentNegative,
-        positivePercentage: totalPosts > 0 ? (sentimentPositive / totalPosts) * 100 : 0,
-        neutralPercentage: totalPosts > 0 ? (sentimentNeutral / totalPosts) * 100 : 0,
-        negativePercentage: totalPosts > 0 ? (sentimentNegative / totalPosts) * 100 : 0,
+        positivePercentage:
+          totalPosts > 0 ? (sentimentPositive / totalPosts) * 100 : 0,
+        neutralPercentage:
+          totalPosts > 0 ? (sentimentNeutral / totalPosts) * 100 : 0,
+        negativePercentage:
+          totalPosts > 0 ? (sentimentNegative / totalPosts) * 100 : 0,
       },
       topPlatform: {
-        name: topPlatform?.name || 'N/A',
+        name: topPlatform?.name || "N/A",
         postsCount: parseInt(topPlatform?.count) || 0,
       },
       recentActivity: {
@@ -111,50 +139,80 @@ export class AnalyticsService {
     };
   }
 
-  async getTrendAnalytics(query: AnalyticsQueryDto): Promise<TrendAnalyticsDto> {
+  async getTrendAnalytics(
+    _query: AnalyticsQueryDto,
+  ): Promise<TrendAnalyticsDto> {
     // Get daily posts for the last 30 days
     const dailyPosts = await this.postsRepository
-      .createQueryBuilder('post')
-      .select("DATE(post.postedAt)", 'date')
-      .addSelect('COUNT(*)', 'count')
-      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'engagement')
+      .createQueryBuilder("post")
+      .select("DATE(post.postedAt)", "date")
+      .addSelect("COUNT(*)", "count")
+      .addSelect("COALESCE(AVG(post.engagementScore), 0)", "engagement")
+      .addSelect("COALESCE(SUM(post.likesCount), 0)", "likes")
+      .addSelect("COALESCE(SUM(post.commentsCount), 0)", "comments")
+      .addSelect("COALESCE(SUM(post.sharesCount), 0)", "shares")
       .where("post.postedAt >= NOW() - INTERVAL '30 days'")
-      .groupBy('date')
-      .orderBy('date', 'ASC')
+      .groupBy("date")
+      .orderBy("date", "ASC")
       .getRawMany();
 
     // Get hourly posts for the last 24 hours
     const hourlyPosts = await this.postsRepository
-      .createQueryBuilder('post')
-      .select("DATE_TRUNC('hour', post.postedAt)", 'date')
-      .addSelect('COUNT(*)', 'count')
-      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'engagement')
+      .createQueryBuilder("post")
+      .select("DATE_TRUNC('hour', post.postedAt)", "date")
+      .addSelect("COUNT(*)", "count")
+      .addSelect("COALESCE(AVG(post.engagementScore), 0)", "engagement")
       .where("post.postedAt >= NOW() - INTERVAL '24 hours'")
-      .groupBy('date')
-      .orderBy('date', 'ASC')
+      .groupBy("date")
+      .orderBy("date", "ASC")
       .getRawMany();
 
     // Calculate growth rates
-    const totalPosts = await this.postsRepository.count();
+    const postsLast24Hours = await this.postsRepository
+      .createQueryBuilder("post")
+      .where("post.postedAt >= NOW() - INTERVAL '24 hours'")
+      .getCount();
+    const postsPrevious24Hours = await this.postsRepository
+      .createQueryBuilder("post")
+      .where("post.postedAt >= NOW() - INTERVAL '48 hours'")
+      .andWhere("post.postedAt < NOW() - INTERVAL '24 hours'")
+      .getCount();
+
     const postsLast7Days = await this.postsRepository
-      .createQueryBuilder('post')
+      .createQueryBuilder("post")
       .where("post.postedAt >= NOW() - INTERVAL '7 days'")
       .getCount();
     const postsLast14Days = await this.postsRepository
-      .createQueryBuilder('post')
+      .createQueryBuilder("post")
       .where("post.postedAt >= NOW() - INTERVAL '14 days'")
       .andWhere("post.postedAt < NOW() - INTERVAL '7 days'")
       .getCount();
 
-    const weeklyGrowth = postsLast14Days > 0 
-      ? ((postsLast7Days - postsLast14Days) / postsLast14Days) * 100 
-      : 0;
+    const postsLast30Days = await this.postsRepository
+      .createQueryBuilder("post")
+      .where("post.postedAt >= NOW() - INTERVAL '30 days'")
+      .getCount();
+    const postsPrevious30Days = await this.postsRepository
+      .createQueryBuilder("post")
+      .where("post.postedAt >= NOW() - INTERVAL '60 days'")
+      .andWhere("post.postedAt < NOW() - INTERVAL '30 days'")
+      .getCount();
+
+    const calculateGrowth = (current: number, previous: number): number =>
+      previous > 0
+        ? ((current - previous) / previous) * 100
+        : current > 0
+          ? 100
+          : 0;
 
     return {
       dailyPosts: dailyPosts.map((item) => ({
         date: item.date,
         count: parseInt(item.count),
         engagement: parseFloat(item.engagement),
+        likes: parseInt(item.likes),
+        comments: parseInt(item.comments),
+        shares: parseInt(item.shares),
       })),
       hourlyPosts: hourlyPosts.map((item) => ({
         date: item.date,
@@ -162,21 +220,21 @@ export class AnalyticsService {
         engagement: parseFloat(item.engagement),
       })),
       growthRate: {
-        daily: 0, // Calculate if needed
-        weekly: weeklyGrowth,
-        monthly: 0, // Calculate if needed
+        daily: calculateGrowth(postsLast24Hours, postsPrevious24Hours),
+        weekly: calculateGrowth(postsLast7Days, postsLast14Days),
+        monthly: calculateGrowth(postsLast30Days, postsPrevious30Days),
       },
     };
   }
 
   async getTopHashtags(limit: number = 20): Promise<TopHashtagDto[]> {
     const hashtags = await this.postsRepository
-      .createQueryBuilder('post')
-      .select('unnest(post.hashtags)', 'hashtag')
-      .addSelect('COUNT(*)', 'count')
+      .createQueryBuilder("post")
+      .select("unnest(post.hashtags)", "hashtag")
+      .addSelect("COUNT(*)", "count")
       .where("post.postedAt >= NOW() - INTERVAL '7 days'")
-      .groupBy('hashtag')
-      .orderBy('count', 'DESC')
+      .groupBy("hashtag")
+      .orderBy("count", "DESC")
       .limit(limit)
       .getRawMany();
 
@@ -187,36 +245,62 @@ export class AnalyticsService {
     }));
   }
 
-  async getSentimentAnalytics(query: AnalyticsQueryDto): Promise<SentimentAnalyticsDto> {
+  async getSentimentAnalytics(
+    _query: AnalyticsQueryDto,
+  ): Promise<SentimentAnalyticsDto> {
     // Overall sentiment
     const overall = await this.postsRepository
-      .createQueryBuilder('post')
-      .select("COUNT(*) FILTER (WHERE post.sentiment = 'positive')", 'positive')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'neutral')", 'neutral')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'negative')", 'negative')
+      .createQueryBuilder("post")
+      .select("COUNT(*) FILTER (WHERE post.sentiment = 'positive')", "positive")
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'neutral')",
+        "neutral",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
+        "negative",
+      )
       .getRawOne();
 
     // Sentiment by platform
     const byPlatform = await this.postsRepository
-      .createQueryBuilder('post')
-      .leftJoin('post.platform', 'platform')
-      .select('platform.name', 'platformName')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'positive')", 'positive')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'neutral')", 'neutral')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'negative')", 'negative')
-      .groupBy('platform.name')
+      .createQueryBuilder("post")
+      .leftJoin("post.platform", "platform")
+      .select("platform.name", "platformName")
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'positive')",
+        "positive",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'neutral')",
+        "neutral",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
+        "negative",
+      )
+      .groupBy("platform.name")
       .getRawMany();
 
     // Sentiment trend (last 7 days)
     const trend = await this.postsRepository
-      .createQueryBuilder('post')
-      .select("DATE(post.postedAt)", 'date')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'positive')", 'positive')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'neutral')", 'neutral')
-      .addSelect("COUNT(*) FILTER (WHERE post.sentiment = 'negative')", 'negative')
+      .createQueryBuilder("post")
+      .select("DATE(post.postedAt)", "date")
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'positive')",
+        "positive",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'neutral')",
+        "neutral",
+      )
+      .addSelect(
+        "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
+        "negative",
+      )
       .where("post.postedAt >= NOW() - INTERVAL '7 days'")
-      .groupBy('date')
-      .orderBy('date', 'ASC')
+      .groupBy("date")
+      .orderBy("date", "ASC")
       .getRawMany();
 
     return {
@@ -240,39 +324,48 @@ export class AnalyticsService {
     };
   }
 
-  async getEngagementAnalytics(query: AnalyticsQueryDto): Promise<EngagementAnalyticsDto> {
+  async getEngagementAnalytics(
+    _query: AnalyticsQueryDto,
+  ): Promise<EngagementAnalyticsDto> {
     const stats = await this.postsRepository
-      .createQueryBuilder('post')
-      .select('COUNT(*)', 'totalPosts')
-      .addSelect('COALESCE(SUM(post.likesCount), 0)', 'totalLikes')
-      .addSelect('COALESCE(SUM(post.commentsCount), 0)', 'totalComments')
-      .addSelect('COALESCE(SUM(post.sharesCount), 0)', 'totalShares')
-      .addSelect('COALESCE(SUM(post.viewsCount), 0)', 'totalViews')
+      .createQueryBuilder("post")
+      .select("COUNT(*)", "totalPosts")
+      .addSelect("COALESCE(SUM(post.likesCount), 0)", "totalLikes")
+      .addSelect("COALESCE(SUM(post.commentsCount), 0)", "totalComments")
+      .addSelect("COALESCE(SUM(post.sharesCount), 0)", "totalShares")
+      .addSelect("COALESCE(SUM(post.viewsCount), 0)", "totalViews")
       .getRawOne();
 
     const totalPosts = parseInt(stats.totalPosts) || 1;
 
     // Get top engaging posts
     const topPosts = await this.postsRepository
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.platform', 'platform')
-      .orderBy('post.engagementScore', 'DESC')
+      .createQueryBuilder("post")
+      .leftJoinAndSelect("post.platform", "platform")
+      .orderBy("post.engagementScore", "DESC")
       .limit(10)
       .getMany();
 
+    const totalLikes = parseInt(stats.totalLikes) || 0;
+    const totalComments = parseInt(stats.totalComments) || 0;
+    const totalShares = parseInt(stats.totalShares) || 0;
+
     return {
-      totalLikes: parseInt(stats.totalLikes) || 0,
-      totalComments: parseInt(stats.totalComments) || 0,
-      totalShares: parseInt(stats.totalShares) || 0,
+      totalPosts: parseInt(stats.totalPosts) || 0,
+      totalLikes,
+      totalComments,
+      totalShares,
       totalViews: parseInt(stats.totalViews) || 0,
-      avgLikesPerPost: parseInt(stats.totalLikes) / totalPosts,
-      avgCommentsPerPost: parseInt(stats.totalComments) / totalPosts,
-      avgSharesPerPost: parseInt(stats.totalShares) / totalPosts,
+      avgLikesPerPost: totalLikes / totalPosts,
+      avgCommentsPerPost: totalComments / totalPosts,
+      avgSharesPerPost: totalShares / totalPosts,
+      avgEngagementPerPost:
+        (totalLikes + totalComments + totalShares) / totalPosts,
       topEngagingPosts: topPosts.map((post) => ({
         id: post.id,
-        content: post.content?.substring(0, 100) || '',
-        engagementScore: parseFloat(post.engagementScore?.toString() || '0'),
-        platform: post.platform?.name || '',
+        content: post.content?.substring(0, 100) || "",
+        engagementScore: parseFloat(post.engagementScore?.toString() || "0"),
+        platform: post.platform?.name || "",
       })),
     };
   }

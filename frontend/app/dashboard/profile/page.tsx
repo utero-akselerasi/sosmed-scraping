@@ -27,7 +27,7 @@ export default function ProfilePage() {
     setIsLoading(true);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
         method: 'PATCH',
         headers: {
@@ -75,7 +75,7 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/password`, {
         method: 'PATCH',
         headers: {

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -47,14 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response: AuthResponse = await apiClient.login(email, password);
-      
+
       // Store tokens
       apiClient.setToken(response.accessToken);
       apiClient.setRefreshToken(response.refreshToken);
-      
+
       // Set user
       setUser(response.user);
-      
+
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (error: any) {

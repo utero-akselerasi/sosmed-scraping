@@ -80,6 +80,7 @@ CREATE TABLE influencers (
     posts_count INTEGER DEFAULT 0,
     engagement_rate DECIMAL(5,2) DEFAULT 0,
     is_verified BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
     metadata JSONB,
     last_scraped_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -133,6 +134,7 @@ CREATE TABLE posts_2026_08 PARTITION OF posts
 CREATE TABLE posts_2026_09 PARTITION OF posts
     FOR VALUES FROM ('2026-09-01') TO ('2026-10-01');
 
+CREATE UNIQUE INDEX idx_posts_platform_post ON posts(platform_id, platform_post_id, posted_at);
 CREATE INDEX idx_posts_platform ON posts(platform_id);
 CREATE INDEX idx_posts_influencer ON posts(influencer_id);
 CREATE INDEX idx_posts_posted_at ON posts(posted_at DESC);
@@ -374,7 +376,8 @@ INSERT INTO keywords (keyword, is_active, priority) VALUES
 -- Insert default admin user (password: admin123 - hashed with bcrypt)
 -- Note: Change this in production!
 INSERT INTO users (email, password_hash, full_name, role, is_active) VALUES
-('admin@festivalmbois.com', '$2b$10$rQ8qVZ.KqXJxKxGxJxKxKOZ9YzqYzqYzqYzqYzqYzqYzqYzqYzqY', 'Administrator', 'admin', true);
+('admin@festivalmbois.com', '$2b$10$JS7lxg2W1AK1y25qaqXvEeb3A1re.P5oe0RO3PLuB/f0NqB7uJIPu', 'Administrator', 'admin', true)
+ON CONFLICT (email) DO NOTHING;
 
 -- ============================================
 -- COMMENTS

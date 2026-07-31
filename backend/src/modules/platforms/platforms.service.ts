@@ -1,15 +1,18 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Platform } from '../../common/entities/platform.entity';
-import { Post } from '../../common/entities/post.entity';
-import { Influencer } from '../../common/entities/influencer.entity';
-import { ScrapingJob } from '../../common/entities/scraping-job.entity';
+﻿import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Platform } from "../../common/entities/platform.entity";
+import { Post } from "../../common/entities/post.entity";
+import { Influencer } from "../../common/entities/influencer.entity";
+import {
+  ScrapingJob,
+  CollectionStatus,
+} from "../../common/entities/scraping-job.entity";
 import {
   PlatformResponseDto,
   PlatformStatsDto,
   PlatformOverviewDto,
-} from './dto/platforms.dto';
+} from "./dto/platforms.dto";
 
 @Injectable()
 export class PlatformsService {
@@ -26,7 +29,7 @@ export class PlatformsService {
 
   async getAllPlatforms(): Promise<PlatformResponseDto[]> {
     const platforms = await this.platformsRepository.find({
-      order: { name: 'ASC' },
+      order: { name: "ASC" },
     });
 
     return platforms.map((platform) => this.transformToResponseDto(platform));
@@ -55,26 +58,26 @@ export class PlatformsService {
 
     // Get posts statistics
     const postStats = await this.postsRepository
-      .createQueryBuilder('post')
-      .select('COUNT(*)', 'totalPosts')
-      .addSelect('COALESCE(SUM(post.likesCount), 0)', 'totalLikes')
-      .addSelect('COALESCE(SUM(post.commentsCount), 0)', 'totalComments')
-      .addSelect('COALESCE(SUM(post.sharesCount), 0)', 'totalShares')
-      .addSelect('COALESCE(SUM(post.viewsCount), 0)', 'totalViews')
-      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'avgEngagementScore')
+      .createQueryBuilder("post")
+      .select("COUNT(*)", "totalPosts")
+      .addSelect("COALESCE(SUM(post.likesCount), 0)", "totalLikes")
+      .addSelect("COALESCE(SUM(post.commentsCount), 0)", "totalComments")
+      .addSelect("COALESCE(SUM(post.sharesCount), 0)", "totalShares")
+      .addSelect("COALESCE(SUM(post.viewsCount), 0)", "totalViews")
+      .addSelect("COALESCE(AVG(post.engagementScore), 0)", "avgEngagementScore")
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'positive')",
-        'sentimentPositive',
+        "sentimentPositive",
       )
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'neutral')",
-        'sentimentNeutral',
+        "sentimentNeutral",
       )
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
-        'sentimentNegative',
+        "sentimentNegative",
       )
-      .where('post.platformId = :platformId', { platformId: id })
+      .where("post.platformId = :platformId", { platformId: id })
       .getRawOne();
 
     // Get total influencers
@@ -84,8 +87,8 @@ export class PlatformsService {
 
     // Get last scraped time
     const lastJob = await this.scrapingJobsRepository.findOne({
-      where: { platformId: id, status: 'completed' },
-      order: { completedAt: 'DESC' },
+      where: { platformId: id, status: CollectionStatus.COMPLETED },
+      order: { completedAt: "DESC" },
     });
 
     return {

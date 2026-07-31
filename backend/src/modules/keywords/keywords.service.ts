@@ -1,14 +1,18 @@
-﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Keyword } from '../../common/entities/keyword.entity';
+﻿import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Keyword } from "../../common/entities/keyword.entity";
 import {
   CreateKeywordDto,
   UpdateKeywordDto,
   KeywordResponseDto,
   GetKeywordsQueryDto,
   PaginatedKeywordsResponseDto,
-} from './dto/keywords.dto';
+} from "./dto/keywords.dto";
 
 @Injectable()
 export class KeywordsService {
@@ -17,7 +21,9 @@ export class KeywordsService {
     private keywordsRepository: Repository<Keyword>,
   ) {}
 
-  async create(createKeywordDto: CreateKeywordDto): Promise<KeywordResponseDto> {
+  async create(
+    createKeywordDto: CreateKeywordDto,
+  ): Promise<KeywordResponseDto> {
     const { keyword, priority } = createKeywordDto;
 
     // Check if keyword already exists
@@ -26,7 +32,7 @@ export class KeywordsService {
     });
 
     if (existing) {
-      throw new ConflictException('Keyword already exists');
+      throw new ConflictException("Keyword already exists");
     }
 
     // Create new keyword
@@ -41,18 +47,22 @@ export class KeywordsService {
     return this.transformToResponseDto(newKeyword);
   }
 
-  async findAll(query: GetKeywordsQueryDto): Promise<PaginatedKeywordsResponseDto> {
+  async findAll(
+    query: GetKeywordsQueryDto,
+  ): Promise<PaginatedKeywordsResponseDto> {
     const { page = 1, limit = 50, isActive } = query;
 
-    const queryBuilder = this.keywordsRepository.createQueryBuilder('keyword');
+    const queryBuilder = this.keywordsRepository.createQueryBuilder("keyword");
 
     // Filter by active status if provided
     if (isActive !== undefined) {
-      queryBuilder.andWhere('keyword.isActive = :isActive', { isActive });
+      queryBuilder.andWhere("keyword.isActive = :isActive", { isActive });
     }
 
     // Sort by priority (highest first) and then by keyword
-    queryBuilder.orderBy('keyword.priority', 'DESC').addOrderBy('keyword.keyword', 'ASC');
+    queryBuilder
+      .orderBy("keyword.priority", "DESC")
+      .addOrderBy("keyword.keyword", "ASC");
 
     // Pagination
     const skip = (page - 1) * limit;
@@ -62,7 +72,9 @@ export class KeywordsService {
     const [keywords, total] = await queryBuilder.getManyAndCount();
 
     // Transform to response DTO
-    const data = keywords.map((keyword) => this.transformToResponseDto(keyword));
+    const data = keywords.map((keyword) =>
+      this.transformToResponseDto(keyword),
+    );
 
     return {
       data,
@@ -87,7 +99,10 @@ export class KeywordsService {
     return this.transformToResponseDto(keyword);
   }
 
-  async update(id: string, updateKeywordDto: UpdateKeywordDto): Promise<KeywordResponseDto> {
+  async update(
+    id: string,
+    updateKeywordDto: UpdateKeywordDto,
+  ): Promise<KeywordResponseDto> {
     const keyword = await this.keywordsRepository.findOne({
       where: { id },
     });
@@ -103,7 +118,7 @@ export class KeywordsService {
       });
 
       if (existing && existing.id !== id) {
-        throw new ConflictException('Keyword already exists');
+        throw new ConflictException("Keyword already exists");
       }
 
       keyword.keyword = updateKeywordDto.keyword.toLowerCase();
@@ -152,7 +167,7 @@ export class KeywordsService {
   async getActiveKeywords(): Promise<KeywordResponseDto[]> {
     const keywords = await this.keywordsRepository.find({
       where: { isActive: true },
-      order: { priority: 'DESC', keyword: 'ASC' },
+      order: { priority: "DESC", keyword: "ASC" },
     });
 
     return keywords.map((keyword) => this.transformToResponseDto(keyword));

@@ -150,19 +150,19 @@ export default function PostsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Posts</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.total)}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.totalPosts)}</p>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 rounded-lg shadow p-4">
             <p className="text-sm text-green-900 dark:text-green-300">Positive</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatNumber(stats.bysentiment?.positive || 0)}</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatNumber(stats.sentimentDistribution?.positive || 0)}</p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg shadow p-4">
             <p className="text-sm text-gray-900 dark:text-gray-300">Neutral</p>
-            <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{formatNumber(stats.bysentiment?.neutral || 0)}</p>
+            <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{formatNumber(stats.sentimentDistribution?.neutral || 0)}</p>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-lg shadow p-4">
             <p className="text-sm text-red-900 dark:text-red-300">Negative</p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatNumber(stats.bysentiment?.negative || 0)}</p>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatNumber(stats.sentimentDistribution?.negative || 0)}</p>
           </div>
         </div>
       )}
@@ -267,11 +267,11 @@ export default function PostsPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                      {post.authorName?.charAt(0).toUpperCase() || '?'}
+                      {post.influencerName?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{post.authorName}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">@{post.authorUsername}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{post.influencerName}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">@{post.influencerUsername}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -311,7 +311,7 @@ export default function PostsPage() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatRelativeTime(post.publishedAt)}
+                      {formatRelativeTime(post.postedAt)}
                     </span>
                     {post.postUrl && (
                       <a

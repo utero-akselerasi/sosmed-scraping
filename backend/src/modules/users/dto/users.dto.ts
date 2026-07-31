@@ -1,20 +1,31 @@
-﻿import { IsEmail, IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, MinLength, IsInt, Min, Max } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { UserRole } from '../../../common/entities/user.entity';
+﻿import {
+  IsEmail,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  MinLength,
+  IsInt,
+  Min,
+  Max,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { UserRole } from "../../../common/entities/user.entity";
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: "user@example.com" })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ example: "John Doe" })
   @IsString()
   @IsNotEmpty()
   fullName: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: "password123" })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
@@ -27,12 +38,12 @@ export class CreateUserDto {
 }
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'user@example.com' })
+  @ApiPropertyOptional({ example: "user@example.com" })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional({ example: 'John Doe Updated' })
+  @ApiPropertyOptional({ example: "John Doe Updated" })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -50,12 +61,12 @@ export class UpdateUserDto {
 }
 
 export class UpdateProfileDto {
-  @ApiPropertyOptional({ example: 'user@example.com' })
+  @ApiPropertyOptional({ example: "user@example.com" })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiPropertyOptional({ example: 'John Doe Updated' })
+  @ApiPropertyOptional({ example: "John Doe Updated" })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -63,12 +74,12 @@ export class UpdateProfileDto {
 }
 
 export class ChangePasswordDto {
-  @ApiProperty({ example: 'oldpassword123' })
+  @ApiProperty({ example: "oldpassword123" })
   @IsString()
   @IsNotEmpty()
   currentPassword: string;
 
-  @ApiProperty({ example: 'newpassword123' })
+  @ApiProperty({ example: "newpassword123" })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
@@ -102,14 +113,14 @@ export class UserResponseDto {
 }
 
 export class GetUsersQueryDto {
-  @ApiPropertyOptional({ description: 'Page number', default: 1 })
+  @ApiPropertyOptional({ description: "Page number", default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', default: 20 })
+  @ApiPropertyOptional({ description: "Items per page", default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -117,18 +128,18 @@ export class GetUsersQueryDto {
   @Max(100)
   limit?: number = 20;
 
-  @ApiPropertyOptional({ enum: UserRole, description: 'Filter by role' })
+  @ApiPropertyOptional({ enum: UserRole, description: "Filter by role" })
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @ApiPropertyOptional({ description: 'Filter by active status' })
+  @ApiPropertyOptional({ description: "Filter by active status" })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'Search by email or name' })
+  @ApiPropertyOptional({ description: "Search by email or name" })
   @IsOptional()
   @IsString()
   search?: string;

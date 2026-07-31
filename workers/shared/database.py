@@ -1,4 +1,5 @@
 ﻿import os
+import json
 import asyncpg
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -80,9 +81,9 @@ class DatabaseManager:
             """,
                 data['platform_id'], data['platform_user_id'], data['username'],
                 data.get('full_name'), data.get('profile_picture_url'),
-                data.get('bio'), data.get('followers_count', 0),
-                data.get('following_count', 0), data.get('posts_count', 0),
-                data.get('engagement_rate', 0), data.get('is_verified', False),
+                data.get('bio'), data.get('followers_count') or 0,
+                data.get('following_count') or 0, data.get('posts_count') or 0,
+                data.get('engagement_rate') or 0, data.get('is_verified') or False,
                 data.get('metadata'), datetime.utcnow()
             )
             return row['id']
@@ -98,17 +99,17 @@ class DatabaseManager:
                         shares_count, views_count, sentiment, sentiment_score,
                         hashtags, mentions, location, posted_at, metadata
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-                    ON CONFLICT (platform_id, platform_post_id) DO NOTHING
+                    ON CONFLICT (platform_id, platform_post_id, posted_at) DO NOTHING
                     RETURNING id
                 """,
                     data['platform_id'], data['influencer_id'], data['platform_post_id'],
                     data['post_type'], data.get('content'), data.get('media_urls', []),
-                    data.get('post_url'), data.get('likes_count', 0),
-                    data.get('comments_count', 0), data.get('shares_count', 0),
-                    data.get('views_count', 0), data.get('sentiment'),
+                    data.get('post_url'), data.get('likes_count') or 0,
+                    data.get('comments_count') or 0, data.get('shares_count') or 0,
+                    data.get('views_count') or 0, data.get('sentiment'),
                     data.get('sentiment_score'), data.get('hashtags', []),
                     data.get('mentions', []), data.get('location'),
-                    data['posted_at'], data.get('metadata')
+                    data['posted_at'], json.dumps(data.get('metadata')) if data.get('metadata') else None
                 )
                 return row['id'] if row else None
             except Exception as e:

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './auth-context';
 import { ThemeProvider } from './theme-context';
+import { ToastProvider } from '@/components/ui/toast';
 import { useState } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <ToastProvider>
         <AuthProvider>
           {children}
           <Toaster
@@ -49,6 +51,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             }}
           />
         </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
