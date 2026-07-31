@@ -10,6 +10,7 @@ This worker uses multiple approaches to scrape Instagram data:
 
 import os
 import asyncio
+import time
 import re
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -56,7 +57,6 @@ class InstagramWorker:
                 download_comments=False,
                 save_metadata=False,
                 compress_json=False,
-                max_connection_attempts=1,
             )
             
             # Try to load session if exists
@@ -108,7 +108,7 @@ class InstagramWorker:
         mentions = re.findall(r'@(\w+)', text)
         return [f"@{mention}" for mention in mentions]
     
-    async def scrape_hashtag_instaloader(self, hashtag: str) -> List[Dict[str, Any]]:
+    def scrape_hashtag_instaloader(self, hashtag: str) -> List[Dict[str, Any]]:
         """Scrape posts by hashtag using Instaloader"""
         if not INSTALOADER_AVAILABLE or not self.loader:
             logger.warning("Instaloader not available")
@@ -117,9 +117,12 @@ class InstagramWorker:
         posts_data = []
         
         try:
+            # Remove # from hashtag if present
             clean_hashtag = hashtag.replace('#', '').strip()
+            
             logger.info(f"Scraping Instagram hashtag: #{clean_hashtag}")
             
+            # Get posts from hashtag
             hashtag_obj = instaloader.Hashtag.from_name(
                 self.loader.context, 
                 clean_hashtag
@@ -133,6 +136,7 @@ class InstagramWorker:
                     break
                 
                 try:
+                    # Extract post data
                     post_data = {
                         'platform_user_id': str(post.owner_id),
                         'username': post.owner_username,
@@ -165,7 +169,8 @@ class InstagramWorker:
                     
                     logger.debug(f"Scraped post {post.shortcode} from @{post.owner_username}")
                     
-                    await asyncio.sleep(1)
+                    # Rate limiting
+                    time.sleep(1)
                     
                 except Exception as e:
                     logger.error(f"Error processing post: {e}")
@@ -220,11 +225,13 @@ class InstagramWorker:
     async def scrape_hashtag(self, hashtag: str) -> List[Dict[str, Any]]:
         """Main scraping method - tries multiple approaches"""
         
+        # Try Instaloader first
         if INSTALOADER_AVAILABLE and self.loader:
-            posts = await self.scrape_hashtag_instaloader(hashtag)
+            posts = self.scrape_hashtag_instaloader(hashtag)
             if posts:
                 return posts
         
+        # Fallback to sample data
         logger.warning(f"Using fallback sample data for {hashtag}")
         return self.scrape_hashtag_fallback(hashtag)
     

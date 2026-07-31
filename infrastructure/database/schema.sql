@@ -80,6 +80,7 @@ CREATE TABLE influencers (
     posts_count INTEGER DEFAULT 0,
     engagement_rate DECIMAL(5,2) DEFAULT 0,
     is_verified BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
     metadata JSONB,
     last_scraped_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -133,6 +134,7 @@ CREATE TABLE posts_2026_08 PARTITION OF posts
 CREATE TABLE posts_2026_09 PARTITION OF posts
     FOR VALUES FROM ('2026-09-01') TO ('2026-10-01');
 
+CREATE UNIQUE INDEX idx_posts_platform_post ON posts(platform_id, platform_post_id, posted_at);
 CREATE INDEX idx_posts_platform ON posts(platform_id);
 CREATE INDEX idx_posts_influencer ON posts(influencer_id);
 CREATE INDEX idx_posts_posted_at ON posts(posted_at DESC);

@@ -1,9 +1,14 @@
-﻿import { Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
-import { User, UserRole } from '../../common/entities/user.entity';
+﻿import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import * as bcrypt from "bcrypt";
+import { ConfigService } from "@nestjs/config";
+import { User, UserRole } from "../../common/entities/user.entity";
 import {
   CreateUserDto,
   UpdateUserDto,
@@ -12,7 +17,7 @@ import {
   UserResponseDto,
   GetUsersQueryDto,
   PaginatedUsersResponseDto,
-} from './dto/users.dto';
+} from "./dto/users.dto";
 
 @Injectable()
 export class UsersService {
@@ -31,11 +36,11 @@ export class UsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException("Email already exists");
     }
 
     // Hash password
-    const bcryptRounds = this.configService.get('security.bcryptRounds');
+    const bcryptRounds = this.configService.get("security.bcryptRounds");
     const passwordHash = await bcrypt.hash(password, bcryptRounds);
 
     // Create user
@@ -55,26 +60,26 @@ export class UsersService {
   async findAll(query: GetUsersQueryDto): Promise<PaginatedUsersResponseDto> {
     const { page = 1, limit = 20, role, isActive, search } = query;
 
-    const queryBuilder = this.usersRepository.createQueryBuilder('user');
+    const queryBuilder = this.usersRepository.createQueryBuilder("user");
 
     // Apply filters
     if (role) {
-      queryBuilder.andWhere('user.role = :role', { role });
+      queryBuilder.andWhere("user.role = :role", { role });
     }
 
     if (isActive !== undefined) {
-      queryBuilder.andWhere('user.isActive = :isActive', { isActive });
+      queryBuilder.andWhere("user.isActive = :isActive", { isActive });
     }
 
     if (search) {
       queryBuilder.andWhere(
-        '(user.email ILIKE :search OR user.fullName ILIKE :search)',
+        "(user.email ILIKE :search OR user.fullName ILIKE :search)",
         { search: `%${search}%` },
       );
     }
 
     // Sort by created date (newest first)
-    queryBuilder.orderBy('user.createdAt', 'DESC');
+    queryBuilder.orderBy("user.createdAt", "DESC");
 
     // Pagination
     const skip = (page - 1) * limit;
@@ -109,7 +114,10 @@ export class UsersService {
     return this.transformToResponseDto(user);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id },
     });
@@ -125,7 +133,7 @@ export class UsersService {
       });
 
       if (existingUser) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException("Email already exists");
       }
 
       user.email = updateUserDto.email;
@@ -148,13 +156,16 @@ export class UsersService {
     return this.transformToResponseDto(user);
   }
 
-  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<UserResponseDto> {
+  async updateProfile(
+    userId: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     // Check if new email already exists (if being updated)
@@ -164,7 +175,7 @@ export class UsersService {
       });
 
       if (existingUser) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException("Email already exists");
       }
 
       user.email = updateProfileDto.email;
@@ -179,7 +190,10 @@ export class UsersService {
     return this.transformToResponseDto(user);
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
     const { currentPassword, newPassword } = changePasswordDto;
 
     const user = await this.usersRepository.findOne({
@@ -187,18 +201,21 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException("User not found");
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new UnauthorizedException("Current password is incorrect");
     }
 
     // Hash new password
-    const bcryptRounds = this.configService.get('security.bcryptRounds');
+    const bcryptRounds = this.configService.get("security.bcryptRounds");
     user.passwordHash = await bcrypt.hash(newPassword, bcryptRounds);
 
     await this.usersRepository.save(user);

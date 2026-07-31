@@ -2,14 +2,14 @@
   Injectable,
   UnauthorizedException,
   ConflictException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
-import { User } from '../../common/entities/user.entity';
-import { LoginDto, RegisterDto, AuthResponseDto } from './dto/auth.dto';
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import * as bcrypt from "bcrypt";
+import { ConfigService } from "@nestjs/config";
+import { User } from "../../common/entities/user.entity";
+import { LoginDto, RegisterDto, AuthResponseDto } from "./dto/auth.dto";
 
 @Injectable()
 export class AuthService {
@@ -29,11 +29,11 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException("Email already exists");
     }
 
     // Hash password
-    const bcryptRounds = this.configService.get('security.bcryptRounds');
+    const bcryptRounds = this.configService.get("security.bcryptRounds");
     const passwordHash = await bcrypt.hash(password, bcryptRounds);
 
     // Create user
@@ -58,14 +58,14 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Update last login
@@ -82,7 +82,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException("User not found");
     }
 
     return user;
@@ -96,13 +96,13 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('jwt.secret'),
-      expiresIn: this.configService.get('jwt.expiresIn'),
+      secret: this.configService.get("jwt.secret"),
+      expiresIn: this.configService.get("jwt.expiresIn"),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('jwt.refreshSecret'),
-      expiresIn: this.configService.get('jwt.refreshExpiresIn'),
+      secret: this.configService.get("jwt.refreshSecret"),
+      expiresIn: this.configService.get("jwt.refreshExpiresIn"),
     });
 
     return {
@@ -120,13 +120,13 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<AuthResponseDto> {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('jwt.refreshSecret'),
+        secret: this.configService.get("jwt.refreshSecret"),
       });
 
       const user = await this.validateUser(payload.sub);
       return this.generateTokens(user);
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException("Invalid refresh token");
     }
   }
 }

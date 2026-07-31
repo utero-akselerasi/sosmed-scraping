@@ -35,7 +35,7 @@ export default function InfluencerDetailPage() {
   const { data: engagementData, isLoading: isLoadingEngagement } = useQuery({
     queryKey: ['influencer-engagement', influencerId],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/influencers/${influencerId}/engagement?days=30`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -50,7 +50,7 @@ export default function InfluencerDetailPage() {
   const { data: contentTypeData, isLoading: isLoadingContentTypes } = useQuery({
     queryKey: ['influencer-content-types', influencerId],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/influencers/${influencerId}/content-types`, {
         headers: {
           'Authorization': `Bearer ${token}`,
