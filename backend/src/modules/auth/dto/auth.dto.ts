@@ -1,13 +1,13 @@
-﻿import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+﻿import { IsEmail, IsString, MinLength, IsNotEmpty } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class LoginDto {
-  @ApiProperty({ example: 'admin@festivalmbois.com' })
+  @ApiProperty({ example: "admin@festivalmbois.com" })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: 'admin123' })
+  @ApiProperty({ example: "admin123" })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
@@ -15,17 +15,17 @@ export class LoginDto {
 }
 
 export class RegisterDto {
-  @ApiProperty({ example: 'user@example.com' })
+  @ApiProperty({ example: "user@example.com" })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ example: "John Doe" })
   @IsString()
   @IsNotEmpty()
   fullName: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: "password123" })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
@@ -33,7 +33,7 @@ export class RegisterDto {
 }
 
 export class RefreshTokenDto {
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIs...' })
+  @ApiProperty({ example: "eyJhbGciOiJIUzI1NiIs..." })
   @IsString()
   @IsNotEmpty()
   refreshToken: string;

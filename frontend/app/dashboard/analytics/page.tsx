@@ -55,9 +55,9 @@ export default function AnalyticsPage() {
   // Prepare engagement over time data
   const engagementOverTimeData = trends?.dailyPosts?.slice(-14).map((item: any) => ({
     date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    likes: Math.floor(Math.random() * 1000), // Mock data - replace with real
-    comments: Math.floor(Math.random() * 200),
-    shares: Math.floor(Math.random() * 100),
+    likes: item.likes || 0,
+    comments: item.comments || 0,
+    shares: item.shares || 0,
   })) || [];
 
   return (

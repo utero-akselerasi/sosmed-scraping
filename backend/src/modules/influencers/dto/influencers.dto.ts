@@ -1,16 +1,29 @@
-﻿import { IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
-import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+﻿import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsIn,
+  IsInt,
+  Min,
+  Max,
+} from "class-validator";
+import { ApiPropertyOptional, ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export class GetInfluencersQueryDto {
-  @ApiPropertyOptional({ description: 'Page number', default: 1, minimum: 1 })
+  @ApiPropertyOptional({ description: "Page number", default: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', default: 20, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({
+    description: "Items per page",
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -18,32 +31,34 @@ export class GetInfluencersQueryDto {
   @Max(100)
   limit?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Platform ID filter' })
+  @ApiPropertyOptional({ description: "Platform ID filter" })
   @IsOptional()
   @IsString()
   platformId?: string;
 
-  @ApiPropertyOptional({ description: 'Search by username or name' })
+  @ApiPropertyOptional({ description: "Search by username or name" })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Sort by field', 
-    enum: ['followersCount', 'engagementRate', 'postsCount'],
-    default: 'engagementRate'
+  @ApiPropertyOptional({
+    description: "Sort by field",
+    enum: ["followersCount", "engagementRate", "postsCount"],
+    default: "engagementRate",
   })
   @IsOptional()
   @IsString()
-  sortBy?: string = 'engagementRate';
+  @IsIn(["followersCount", "engagementRate", "postsCount"])
+  sortBy?: string = "engagementRate";
 
-  @ApiPropertyOptional({ 
-    description: 'Sort order', 
-    enum: ['ASC', 'DESC'],
-    default: 'DESC'
+  @ApiPropertyOptional({
+    description: "Sort order",
+    enum: ["ASC", "DESC"],
+    default: "DESC",
   })
   @IsOptional()
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+  @IsEnum(["ASC", "DESC"])
+  sortOrder?: "ASC" | "DESC" = "DESC";
 }
 
 export class InfluencerResponseDto {
@@ -137,29 +152,29 @@ export class PaginatedInfluencersResponseDto {
 }
 
 export class EngagementDataDto {
-  @ApiProperty({ description: 'Date of the data point' })
+  @ApiProperty({ description: "Date of the data point" })
   date: string;
 
-  @ApiProperty({ description: 'Total likes on this date' })
+  @ApiProperty({ description: "Total likes on this date" })
   likes: number;
 
-  @ApiProperty({ description: 'Total comments on this date' })
+  @ApiProperty({ description: "Total comments on this date" })
   comments: number;
 
-  @ApiProperty({ description: 'Total shares on this date' })
+  @ApiProperty({ description: "Total shares on this date" })
   shares: number;
 
-  @ApiProperty({ description: 'Engagement score on this date' })
+  @ApiProperty({ description: "Engagement score on this date" })
   engagementScore: number;
 }
 
 export class ContentTypeDistributionDto {
-  @ApiProperty({ description: 'Content type (e.g., image, video, carousel)' })
+  @ApiProperty({ description: "Content type (e.g., image, video, carousel)" })
   type: string;
 
-  @ApiProperty({ description: 'Number of posts with this type' })
+  @ApiProperty({ description: "Number of posts with this type" })
   count: number;
 
-  @ApiProperty({ description: 'Percentage of total posts' })
+  @ApiProperty({ description: "Percentage of total posts" })
   percentage: number;
 }

@@ -1,14 +1,22 @@
-﻿import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, Min, Max } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+﻿import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
 export class CreateKeywordDto {
-  @ApiProperty({ example: 'festival mbois' })
+  @ApiProperty({ example: "festival mbois" })
   @IsString()
   @IsNotEmpty()
   keyword: string;
 
-  @ApiPropertyOptional({ example: 1, description: 'Priority (1=highest)' })
+  @ApiPropertyOptional({ example: 1, description: "Priority (1=highest)" })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -17,7 +25,7 @@ export class CreateKeywordDto {
 }
 
 export class UpdateKeywordDto {
-  @ApiPropertyOptional({ example: 'festival mbois 2026' })
+  @ApiPropertyOptional({ example: "festival mbois 2026" })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -57,14 +65,14 @@ export class KeywordResponseDto {
 }
 
 export class GetKeywordsQueryDto {
-  @ApiPropertyOptional({ description: 'Page number', default: 1 })
+  @ApiPropertyOptional({ description: "Page number", default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Items per page', default: 50 })
+  @ApiPropertyOptional({ description: "Items per page", default: 50 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -72,7 +80,7 @@ export class GetKeywordsQueryDto {
   @Max(100)
   limit?: number = 50;
 
-  @ApiPropertyOptional({ description: 'Filter by active status' })
+  @ApiPropertyOptional({ description: "Filter by active status" })
   @IsOptional()
   @Type(() => Boolean)
   @IsBoolean()

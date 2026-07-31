@@ -1,9 +1,9 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Influencer } from '../../common/entities/influencer.entity';
-import { Platform } from '../../common/entities/platform.entity';
-import { Post } from '../../common/entities/post.entity';
+﻿import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Influencer } from "../../common/entities/influencer.entity";
+import { Platform } from "../../common/entities/platform.entity";
+import { Post } from "../../common/entities/post.entity";
 import {
   GetInfluencersQueryDto,
   InfluencerResponseDto,
@@ -11,7 +11,7 @@ import {
   PaginatedInfluencersResponseDto,
   EngagementDataDto,
   ContentTypeDistributionDto,
-} from './dto/influencers.dto';
+} from "./dto/influencers.dto";
 
 @Injectable()
 export class InfluencersService {
@@ -32,23 +32,25 @@ export class InfluencersService {
       limit = 20,
       platformId,
       search,
-      sortBy = 'engagement_rate',
-      sortOrder = 'DESC',
+      sortBy = "engagement_rate",
+      sortOrder = "DESC",
     } = query;
 
     // Build query
     const queryBuilder = this.influencersRepository
-      .createQueryBuilder('influencer')
-      .leftJoinAndSelect('influencer.platform', 'platform');
+      .createQueryBuilder("influencer")
+      .leftJoinAndSelect("influencer.platform", "platform");
 
     // Apply filters
     if (platformId) {
-      queryBuilder.andWhere('influencer.platformId = :platformId', { platformId });
+      queryBuilder.andWhere("influencer.platformId = :platformId", {
+        platformId,
+      });
     }
 
     if (search) {
       queryBuilder.andWhere(
-        '(influencer.username ILIKE :search OR influencer.fullName ILIKE :search)',
+        "(influencer.username ILIKE :search OR influencer.fullName ILIKE :search)",
         { search: `%${search}%` },
       );
     }
@@ -82,9 +84,9 @@ export class InfluencersService {
 
   async getInfluencerById(id: string): Promise<InfluencerDetailDto> {
     const influencer = await this.influencersRepository
-      .createQueryBuilder('influencer')
-      .leftJoinAndSelect('influencer.platform', 'platform')
-      .where('influencer.id = :id', { id })
+      .createQueryBuilder("influencer")
+      .leftJoinAndSelect("influencer.platform", "platform")
+      .where("influencer.id = :id", { id })
       .getOne();
 
     if (!influencer) {
@@ -93,25 +95,25 @@ export class InfluencersService {
 
     // Get post statistics
     const postStats = await this.postsRepository
-      .createQueryBuilder('post')
-      .select('COUNT(*)', 'totalPosts')
-      .addSelect('COALESCE(SUM(post.likesCount), 0)', 'totalLikes')
-      .addSelect('COALESCE(SUM(post.commentsCount), 0)', 'totalComments')
-      .addSelect('COALESCE(SUM(post.sharesCount), 0)', 'totalShares')
-      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'avgEngagementScore')
+      .createQueryBuilder("post")
+      .select("COUNT(*)", "totalPosts")
+      .addSelect("COALESCE(SUM(post.likesCount), 0)", "totalLikes")
+      .addSelect("COALESCE(SUM(post.commentsCount), 0)", "totalComments")
+      .addSelect("COALESCE(SUM(post.sharesCount), 0)", "totalShares")
+      .addSelect("COALESCE(AVG(post.engagementScore), 0)", "avgEngagementScore")
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'positive')",
-        'sentimentPositive',
+        "sentimentPositive",
       )
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'neutral')",
-        'sentimentNeutral',
+        "sentimentNeutral",
       )
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
-        'sentimentNegative',
+        "sentimentNegative",
       )
-      .where('post.influencerId = :influencerId', { influencerId: id })
+      .where("post.influencerId = :influencerId", { influencerId: id })
       .getRawOne();
 
     return {
@@ -129,11 +131,13 @@ export class InfluencersService {
     };
   }
 
-  async getTopInfluencers(limit: number = 10): Promise<InfluencerResponseDto[]> {
+  async getTopInfluencers(
+    limit: number = 10,
+  ): Promise<InfluencerResponseDto[]> {
     const influencers = await this.influencersRepository
-      .createQueryBuilder('influencer')
-      .leftJoinAndSelect('influencer.platform', 'platform')
-      .orderBy('influencer.engagementRate', 'DESC')
+      .createQueryBuilder("influencer")
+      .leftJoinAndSelect("influencer.platform", "platform")
+      .orderBy("influencer.engagementRate", "DESC")
       .limit(limit)
       .getMany();
 
@@ -147,10 +151,10 @@ export class InfluencersService {
     limit: number = 10,
   ): Promise<InfluencerResponseDto[]> {
     const influencers = await this.influencersRepository
-      .createQueryBuilder('influencer')
-      .leftJoinAndSelect('influencer.platform', 'platform')
-      .where('influencer.platformId = :platformId', { platformId })
-      .orderBy('influencer.engagementRate', 'DESC')
+      .createQueryBuilder("influencer")
+      .leftJoinAndSelect("influencer.platform", "platform")
+      .where("influencer.platformId = :platformId", { platformId })
+      .orderBy("influencer.engagementRate", "DESC")
       .limit(limit)
       .getMany();
 
@@ -159,14 +163,19 @@ export class InfluencersService {
     );
   }
 
-  async getInfluencerEngagement(influencerId: string, days: number = 30): Promise<EngagementDataDto[]> {
+  async getInfluencerEngagement(
+    influencerId: string,
+    days: number = 30,
+  ): Promise<EngagementDataDto[]> {
     // Verify influencer exists
     const influencer = await this.influencersRepository.findOne({
       where: { id: influencerId },
     });
 
     if (!influencer) {
-      throw new NotFoundException(`Influencer with ID ${influencerId} not found`);
+      throw new NotFoundException(
+        `Influencer with ID ${influencerId} not found`,
+      );
     }
 
     // Get engagement data grouped by date
@@ -174,16 +183,16 @@ export class InfluencersService {
     startDate.setDate(startDate.getDate() - days);
 
     const engagementData = await this.postsRepository
-      .createQueryBuilder('post')
-      .select("DATE(post.postedAt)", 'date')
-      .addSelect('COALESCE(SUM(post.likesCount), 0)', 'likes')
-      .addSelect('COALESCE(SUM(post.commentsCount), 0)', 'comments')
-      .addSelect('COALESCE(SUM(post.sharesCount), 0)', 'shares')
-      .addSelect('COALESCE(AVG(post.engagementScore), 0)', 'engagementScore')
-      .where('post.influencerId = :influencerId', { influencerId })
-      .andWhere('post.postedAt >= :startDate', { startDate })
-      .groupBy('DATE(post.postedAt)')
-      .orderBy('DATE(post.postedAt)', 'ASC')
+      .createQueryBuilder("post")
+      .select("DATE(post.postedAt)", "date")
+      .addSelect("COALESCE(SUM(post.likesCount), 0)", "likes")
+      .addSelect("COALESCE(SUM(post.commentsCount), 0)", "comments")
+      .addSelect("COALESCE(SUM(post.sharesCount), 0)", "shares")
+      .addSelect("COALESCE(AVG(post.engagementScore), 0)", "engagementScore")
+      .where("post.influencerId = :influencerId", { influencerId })
+      .andWhere("post.postedAt >= :startDate", { startDate })
+      .groupBy("DATE(post.postedAt)")
+      .orderBy("DATE(post.postedAt)", "ASC")
       .getRawMany();
 
     return engagementData.map((data) => ({
@@ -195,20 +204,24 @@ export class InfluencersService {
     }));
   }
 
-  async getInfluencerContentTypes(influencerId: string): Promise<ContentTypeDistributionDto[]> {
+  async getInfluencerContentTypes(
+    influencerId: string,
+  ): Promise<ContentTypeDistributionDto[]> {
     // Verify influencer exists
     const influencer = await this.influencersRepository.findOne({
       where: { id: influencerId },
     });
 
     if (!influencer) {
-      throw new NotFoundException(`Influencer with ID ${influencerId} not found`);
+      throw new NotFoundException(
+        `Influencer with ID ${influencerId} not found`,
+      );
     }
 
     // Get total posts count
     const totalPosts = await this.postsRepository
-      .createQueryBuilder('post')
-      .where('post.influencerId = :influencerId', { influencerId })
+      .createQueryBuilder("post")
+      .where("post.influencerId = :influencerId", { influencerId })
       .getCount();
 
     if (totalPosts === 0) {
@@ -219,21 +232,21 @@ export class InfluencersService {
     // Note: contentType field might not exist in current schema
     // This is a placeholder implementation that uses post data patterns
     const contentTypeData = await this.postsRepository
-      .createQueryBuilder('post')
+      .createQueryBuilder("post")
       .select(
         "CASE " +
-        "WHEN post.mediaUrls IS NOT NULL AND '%.mp4%' = ANY(post.mediaUrls) THEN 'video' " +
-        "WHEN post.mediaUrls IS NOT NULL AND '%.jpg%' = ANY(post.mediaUrls) THEN 'image' " +
-        "WHEN post.mediaUrls IS NOT NULL AND '%.png%' = ANY(post.mediaUrls) THEN 'image' " +
-        "WHEN post.mediaUrls IS NOT NULL THEN 'media' " +
-        "ELSE 'text' " +
-        "END",
-        'type'
+          "WHEN post.mediaUrls IS NOT NULL AND '%.mp4%' = ANY(post.mediaUrls) THEN 'video' " +
+          "WHEN post.mediaUrls IS NOT NULL AND '%.jpg%' = ANY(post.mediaUrls) THEN 'image' " +
+          "WHEN post.mediaUrls IS NOT NULL AND '%.png%' = ANY(post.mediaUrls) THEN 'image' " +
+          "WHEN post.mediaUrls IS NOT NULL THEN 'media' " +
+          "ELSE 'text' " +
+          "END",
+        "type",
       )
-      .addSelect('COUNT(*)', 'count')
-      .where('post.influencerId = :influencerId', { influencerId })
-      .groupBy('type')
-      .orderBy('count', 'DESC')
+      .addSelect("COUNT(*)", "count")
+      .where("post.influencerId = :influencerId", { influencerId })
+      .groupBy("type")
+      .orderBy("count", "DESC")
       .getRawMany();
 
     return contentTypeData.map((data) => {
@@ -246,21 +259,23 @@ export class InfluencersService {
     });
   }
 
-  private transformToResponseDto(influencer: Influencer): InfluencerResponseDto {
+  private transformToResponseDto(
+    influencer: Influencer,
+  ): InfluencerResponseDto {
     return {
       id: influencer.id,
       platformId: influencer.platformId,
-      platformName: influencer.platform?.name || '',
-      platformType: influencer.platform?.type || '',
+      platformName: influencer.platform?.name || "",
+      platformType: influencer.platform?.type || "",
       platformUserId: influencer.platformUserId,
       username: influencer.username,
-      fullName: influencer.fullName || '',
-      profilePictureUrl: influencer.profilePictureUrl || '',
-      bio: influencer.bio || '',
+      fullName: influencer.fullName || "",
+      profilePictureUrl: influencer.profilePictureUrl || "",
+      bio: influencer.bio || "",
       followersCount: influencer.followersCount || 0,
       followingCount: influencer.followingCount || 0,
       postsCount: influencer.postsCount || 0,
-      engagementRate: parseFloat(influencer.engagementRate?.toString() || '0'),
+      engagementRate: parseFloat(influencer.engagementRate?.toString() || "0"),
       isVerified: influencer.isVerified || false,
       lastScrapedAt: influencer.lastScrapedAt,
       createdAt: influencer.createdAt,
