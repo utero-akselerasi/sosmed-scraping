@@ -154,42 +154,6 @@ class TikTokWorker:
         
         return videos_data
     
-    def scrape_hashtag_fallback(self, hashtag: str) -> List[Dict[str, Any]]:
-        """Fallback method: Create sample data for testing"""
-        logger.info(f"Using fallback method for hashtag: {hashtag}")
-        
-        # For demo purposes, create sample data
-        sample_videos = []
-        
-        for i in range(3):  # Create 3 sample videos
-            sample_videos.append({
-                'platform_user_id': f'tiktok_user_{i}',
-                'username': f'tiktok_user_{i}',
-                'full_name': f'TikTok User {i}',
-                'profile_picture_url': '',
-                'followers_count': 5000 + (i * 1000),
-                'is_verified': i == 0,
-                
-                'platform_post_id': f'tiktok_video_{hashtag}_{i}_{int(datetime.utcnow().timestamp())}',
-                'content': f'Sample TikTok video about {hashtag} - Festival Mbois content! #{hashtag} #festivalmbois #viral',
-                'media_urls': [],
-                'post_url': f'https://www.tiktok.com/@user/video/sample_{i}',
-                
-                'likes_count': 500 + (i * 100),
-                'comments_count': 50 + (i * 10),
-                'shares_count': 20 + (i * 5),
-                'views_count': 10000 + (i * 2000),
-                
-                'posted_at': datetime.utcnow(),
-                
-                'metadata': {
-                    'is_sample': True,
-                    'hashtag_source': hashtag,
-                }
-            })
-        
-        return sample_videos
-    
     async def scrape_hashtag(self, hashtag: str) -> List[Dict[str, Any]]:
         """Main scraping method - tries multiple approaches"""
         
@@ -199,9 +163,9 @@ class TikTokWorker:
             if videos:
                 return videos
         
-        # Fallback to sample data
-        logger.warning(f"Using fallback sample data for {hashtag}")
-        return self.scrape_hashtag_fallback(hashtag)
+        # No real data available - never fabricate sample data
+        logger.warning(f"No real data available for {hashtag} (skipped)")
+        return []
     
     async def process_video(self, video_data: Dict[str, Any]) -> bool:
         """Process and save a single video"""

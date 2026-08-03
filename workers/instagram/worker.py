@@ -183,45 +183,6 @@ class InstagramWorker:
         
         return posts_data
     
-    def scrape_hashtag_fallback(self, hashtag: str) -> List[Dict[str, Any]]:
-        """Fallback method: Create sample data for testing"""
-        logger.info(f"Using fallback method for hashtag: {hashtag}")
-        
-        # For demo purposes, create sample data
-        # In production, implement actual web scraping or use Instagram API
-        
-        sample_posts = []
-        
-        for i in range(3):  # Create 3 sample posts
-            sample_posts.append({
-                'platform_user_id': f'sample_user_{i}',
-                'username': f'sample_user_{i}',
-                'full_name': f'Sample User {i}',
-                'profile_picture_url': '',
-                'followers_count': 1000 + (i * 500),
-                'is_verified': i == 0,
-                
-                'platform_post_id': f'sample_post_{hashtag}_{i}_{int(datetime.utcnow().timestamp())}',
-                'post_type': 'post',
-                'content': f'Sample post about {hashtag} - This is a test post for Festival Mbois. #{hashtag} #festivalmbois',
-                'media_urls': [],
-                'post_url': f'https://www.instagram.com/p/sample_{i}/',
-                
-                'likes_count': 100 + (i * 50),
-                'comments_count': 10 + (i * 5),
-                'views_count': 0,
-                
-                'location': 'Jakarta, Indonesia',
-                'posted_at': datetime.utcnow(),
-                
-                'metadata': {
-                    'is_sample': True,
-                    'hashtag_source': hashtag,
-                }
-            })
-        
-        return sample_posts
-    
     async def scrape_hashtag(self, hashtag: str) -> List[Dict[str, Any]]:
         """Main scraping method - tries multiple approaches"""
         
@@ -231,9 +192,9 @@ class InstagramWorker:
             if posts:
                 return posts
         
-        # Fallback to sample data
-        logger.warning(f"Using fallback sample data for {hashtag}")
-        return self.scrape_hashtag_fallback(hashtag)
+        # No real data available - never fabricate sample data
+        logger.warning(f"No real data available for {hashtag} (skipped)")
+        return []
     
     async def process_post(self, post_data: Dict[str, Any]) -> bool:
         """Process and save a single post"""
