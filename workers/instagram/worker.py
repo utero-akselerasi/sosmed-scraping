@@ -1,22 +1,23 @@
-﻿"""
-Instagram Worker - Enhanced Implementation
+"""
+Instagram Worker - Web Info Implementation
 Festival Mbois Intelligence Platform
 
-This worker uses multiple approaches to scrape Instagram data:
-1. Instaloader library (preferred)
-2. Instagram Graph API (if available)
-3. Web scraping as fallback
+This worker scrapes Instagram hashtag data using the current web_info
+endpoint (api/v1/tags/web_info/) with a saved Instaloader session, converts
+media structs with the official Instaloader parser Post.from_iphone_struct,
+and stores the results in the database.
+
+Instaloader's Hashtag.get_posts() still targets the removed explore/tags
+endpoint, so extraction here uses Post.from_iphone_struct on the sectional
+layout returned by web_info (same approach as test_scrape.py).
 """
 
 import os
 import asyncio
-import time
 import re
 from typing import List, Dict, Any, Optional
-from datetime import datetime
 from loguru import logger
 from dotenv import load_dotenv
-import json
 
 load_dotenv()
 
@@ -36,18 +37,23 @@ except ImportError:
 
 
 class InstagramWorker:
-    """Enhanced Instagram scraper worker for Festival Mbois"""
-    
+    """Instagram scraper worker for Festival Mbois"""
+
     def __init__(self):
         self.db = DatabaseManager()
         self.platform_id: Optional[str] = None
         self.keywords: List[str] = []
         self.loader = None
-        
+        self.session_valid = False
+
         # Configuration
         self.max_posts_per_keyword = int(os.getenv('INSTAGRAM_MAX_POSTS', 50))
         self.session_file = os.getenv('INSTAGRAM_SESSION_FILE', './instagram_session')
-        
+        if not os.path.isabs(self.session_file):
+            self.session_file = os.path.normpath(
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', self.session_file)
+            )
+
         if INSTALOADER_AVAILABLE:
             self.loader = instaloader.Instaloader(
                 quiet=True,
@@ -58,183 +64,215 @@ class InstagramWorker:
                 save_metadata=False,
                 compress_json=False,
             )
-            
-            # Try to load session if exists
-            try:
-                if os.path.exists(self.session_file):
-                    self.loader.load_session_from_file(
-                        os.getenv('INSTAGRAM_USERNAME', 'default'),
-                        self.session_file
-                    )
-                    logger.info("Instagram session loaded")
-            except Exception as e:
-                logger.warning(f"Could not load Instagram session: {e}")
-    
+            self.session_valid = self._load_and_validate_session()
+        else:
+            logger.error("Instaloader tidak tersedia - worker tidak bisa scraping Instagram")
+
+    def _load_and_validate_session(self) -> bool:
+        """Load session file and validate it with test_login(). No silent dummy fallback."""
+        if not os.path.exists(self.session_file):
+            logger.error(f"Instagram session file tidak ditemukan: {self.session_file}")
+            logger.error("Jalankan dulu: venv\\Scripts\\python instagram\\create_session_from_cookies.py")
+            return False
+
+        try:
+            self.loader.load_session_from_file(
+                os.getenv('INSTAGRAM_USERNAME') or 'festmbois',
+                self.session_file
+            )
+        except Exception as e:
+            logger.error(f"Gagal memuat Instagram session: {e}")
+            return False
+
+        try:
+            username = self.loader.test_login()
+        except Exception as e:
+            logger.error(f"Instagram session INVALID (test_login gagal): {e}")
+            return False
+
+        if not username:
+            logger.error("Instagram session INVALID - tidak ada akun yang login")
+            return False
+
+        logger.info(f"Instagram session valid: @{username}")
+        return True
+
     async def initialize(self):
         """Initialize worker"""
         logger.info("Initializing Instagram worker...")
-        
+
         # Connect to database
         await self.db.connect()
-        
+
         # Get platform ID
         platform = await self.db.get_platform_by_type('instagram')
         if not platform:
             raise Exception("Instagram platform not found in database")
         self.platform_id = platform['id']
-        
+
         # Get keywords
         self.keywords = await self.db.get_active_keywords()
         logger.info(f"Loaded {len(self.keywords)} keywords: {self.keywords}")
-        
+
         logger.info("Instagram worker initialized successfully")
-    
+
     async def close(self):
         """Close connections"""
         await self.db.close()
         logger.info("Instagram worker closed")
-    
+
+    def normalize_hashtag(self, keyword: str) -> str:
+        """Normalize keyword to an Instagram tag name (no '#', no spaces, lowercase)"""
+        if not keyword:
+            return ''
+        return re.sub(r'\s+', '', keyword.strip().lstrip('#').lower())
+
     def extract_hashtags(self, text: str) -> List[str]:
         """Extract hashtags from text"""
         if not text:
             return []
         hashtags = re.findall(r'#(\w+)', text)
         return [f"#{tag.lower()}" for tag in hashtags]
-    
+
     def extract_mentions(self, text: str) -> List[str]:
         """Extract mentions from text"""
         if not text:
             return []
         mentions = re.findall(r'@(\w+)', text)
         return [f"@{mention}" for mention in mentions]
-    
+
+    def collect_media_structs(self, page_data: dict) -> List[Dict[str, Any]]:
+        """Extract media structs from the web_info sectional layout"""
+        media_structs = []
+        for key in ("top", "recent"):
+            block = (page_data.get("data") or {}).get(key)
+            if not isinstance(block, dict):
+                continue
+            for section in block.get("sections", []):
+                layout = section.get("layout_content") or {}
+                for _, items in layout.items():
+                    if not isinstance(items, list):
+                        continue
+                    for item in items:
+                        if not isinstance(item, dict):
+                            continue
+                        media = item.get("media")
+                        if isinstance(media, dict) and media.get("code"):
+                            media_structs.append(media)
+        return media_structs
+
+    def post_to_data(self, post, struct: Dict[str, Any], clean_hashtag: str) -> Optional[Dict[str, Any]]:
+        """Map an Instaloader Post (from_iphone_struct) to worker post data.
+
+        Follower count tidak tersedia di respons web_info; worker memakai satu
+        request per tag (mengikuti test_scrape.py) tanpa panggilan tambahan.
+        """
+        user = struct.get("user") or {}
+        if not user.get("pk"):
+            logger.warning(f"Media {post.shortcode} tanpa data user - dilewati")
+            return None
+
+        platform_user_id = str(user["pk"])
+        username = (user.get("username") or (post.owner_profile.username if post.owner_profile else '')).lower()
+        full_name = user.get("full_name") or post.owner_profile.full_name or ''
+        profile_picture_url = user.get("profile_pic_url") or ''
+        is_verified = bool(user.get("is_verified"))
+        followers_count = 0
+
+        return {
+            'platform_user_id': platform_user_id,
+            'username': username,
+            'full_name': full_name,
+            'profile_picture_url': profile_picture_url,
+            'followers_count': followers_count,
+            'is_verified': is_verified,
+
+            'platform_post_id': post.shortcode,
+            'post_type': 'reel' if post.is_video else 'post',
+            'content': post.caption if post.caption else '',
+            'media_urls': [post.url],
+            'post_url': f"https://www.instagram.com/p/{post.shortcode}/",
+
+            'likes_count': post.likes,
+            'comments_count': post.comments,
+            'views_count': post.video_view_count if post.is_video else 0,
+
+            'location': '',
+            'posted_at': post.date_utc,
+
+            'metadata': {
+                'is_video': post.is_video,
+                'hashtag_source': clean_hashtag,
+            }
+        }
+
     def scrape_hashtag_instaloader(self, hashtag: str) -> List[Dict[str, Any]]:
-        """Scrape posts by hashtag using Instaloader"""
+        """Scrape posts by hashtag via the web_info endpoint + Post.from_iphone_struct"""
         if not INSTALOADER_AVAILABLE or not self.loader:
-            logger.warning("Instaloader not available")
+            logger.error("Instaloader tidak tersedia - tidak bisa scraping Instagram")
             return []
-        
-        posts_data = []
-        
+
+        clean_hashtag = self.normalize_hashtag(hashtag)
+        if not clean_hashtag:
+            logger.error(f"Keyword '{hashtag}' tidak menghasilkan tag Instagram yang valid")
+            return []
+
+        logger.info(f"Scraping Instagram hashtag: #{clean_hashtag} (keyword: {hashtag})")
+
         try:
-            # Remove # from hashtag if present
-            clean_hashtag = hashtag.replace('#', '').strip()
-            
-            logger.info(f"Scraping Instagram hashtag: #{clean_hashtag}")
-            
-            # Get posts from hashtag
-            hashtag_obj = instaloader.Hashtag.from_name(
-                self.loader.context, 
-                clean_hashtag
+            response = self.loader.context.get_iphone_json(
+                "api/v1/tags/web_info/",
+                {"__a": 1, "__d": "dis", "tag_name": clean_hashtag},
             )
-            
-            posts = hashtag_obj.get_posts()
-            
-            count = 0
-            for post in posts:
-                if count >= self.max_posts_per_keyword:
-                    break
-                
-                try:
-                    # Extract post data
-                    post_data = {
-                        'platform_user_id': str(post.owner_id),
-                        'username': post.owner_username,
-                        'full_name': post.owner_profile.full_name if hasattr(post, 'owner_profile') else '',
-                        'profile_picture_url': post.owner_profile.profile_pic_url if hasattr(post, 'owner_profile') else '',
-                        'followers_count': post.owner_profile.followers if hasattr(post, 'owner_profile') else 0,
-                        'is_verified': post.owner_profile.is_verified if hasattr(post, 'owner_profile') else False,
-                        
-                        'platform_post_id': post.shortcode,
-                        'post_type': 'reel' if post.is_video else 'post',
-                        'content': post.caption if post.caption else '',
-                        'media_urls': [post.url],
-                        'post_url': f"https://www.instagram.com/p/{post.shortcode}/",
-                        
-                        'likes_count': post.likes,
-                        'comments_count': post.comments,
-                        'views_count': post.video_view_count if post.is_video else 0,
-                        
-                        'location': post.location.name if post.location else '',
-                        'posted_at': post.date_utc,
-                        
-                        'metadata': {
-                            'is_video': post.is_video,
-                            'hashtag_source': clean_hashtag,
-                        }
-                    }
-                    
-                    posts_data.append(post_data)
-                    count += 1
-                    
-                    logger.debug(f"Scraped post {post.shortcode} from @{post.owner_username}")
-                    
-                    # Rate limiting
-                    time.sleep(1)
-                    
-                except Exception as e:
-                    logger.error(f"Error processing post: {e}")
-                    continue
-            
-            logger.info(f"Scraped {count} posts for hashtag #{clean_hashtag}")
-            
         except Exception as e:
-            logger.error(f"Error scraping hashtag #{clean_hashtag}: {e}")
-        
+            logger.error(f"Gagal mengambil data hashtag #{clean_hashtag} dari endpoint web_info: {e}")
+            return []
+
+        if not isinstance(response, dict) or not (response.get("data") or {}):
+            logger.error(f"Response web_info kosong/tidak valid untuk #{clean_hashtag}")
+            return []
+
+        media_structs = self.collect_media_structs(response)
+        media_structs = list({m["code"]: m for m in media_structs}.values())
+        logger.info(f"Media struct unik untuk #{clean_hashtag}: {len(media_structs)}")
+
+        posts_data = []
+        for struct in media_structs:
+            if len(posts_data) >= self.max_posts_per_keyword:
+                logger.info(
+                    f"Mencapai batas INSTAGRAM_MAX_POSTS ({self.max_posts_per_keyword}) untuk #{clean_hashtag}"
+                )
+                break
+
+            try:
+                post = instaloader.Post.from_iphone_struct(self.loader.context, struct)
+            except Exception as e:
+                logger.warning(f"Media {struct.get('code')} gagal dikonversi: {e}")
+                continue
+
+            try:
+                post_data = self.post_to_data(post, struct, clean_hashtag)
+            except Exception as e:
+                logger.warning(f"Media {struct.get('code')} gagal dipetakan: {e}")
+                continue
+            if post_data is None:
+                continue
+
+            posts_data.append(post_data)
+            logger.debug(f"Scraped post {post.shortcode} dari @{post.owner_username}")
+
+        logger.info(f"Scraped {len(posts_data)} post untuk hashtag #{clean_hashtag}")
         return posts_data
-    
-    def scrape_hashtag_fallback(self, hashtag: str) -> List[Dict[str, Any]]:
-        """Fallback method: Create sample data for testing"""
-        logger.info(f"Using fallback method for hashtag: {hashtag}")
-        
-        # For demo purposes, create sample data
-        # In production, implement actual web scraping or use Instagram API
-        
-        sample_posts = []
-        
-        for i in range(3):  # Create 3 sample posts
-            sample_posts.append({
-                'platform_user_id': f'sample_user_{i}',
-                'username': f'sample_user_{i}',
-                'full_name': f'Sample User {i}',
-                'profile_picture_url': '',
-                'followers_count': 1000 + (i * 500),
-                'is_verified': i == 0,
-                
-                'platform_post_id': f'sample_post_{hashtag}_{i}_{int(datetime.utcnow().timestamp())}',
-                'post_type': 'post',
-                'content': f'Sample post about {hashtag} - This is a test post for Festival Mbois. #{hashtag} #festivalmbois',
-                'media_urls': [],
-                'post_url': f'https://www.instagram.com/p/sample_{i}/',
-                
-                'likes_count': 100 + (i * 50),
-                'comments_count': 10 + (i * 5),
-                'views_count': 0,
-                
-                'location': 'Jakarta, Indonesia',
-                'posted_at': datetime.utcnow(),
-                
-                'metadata': {
-                    'is_sample': True,
-                    'hashtag_source': hashtag,
-                }
-            })
-        
-        return sample_posts
-    
+
     async def scrape_hashtag(self, hashtag: str) -> List[Dict[str, Any]]:
-        """Main scraping method - tries multiple approaches"""
-        
-        # Try Instaloader first
-        if INSTALOADER_AVAILABLE and self.loader:
-            posts = self.scrape_hashtag_instaloader(hashtag)
-            if posts:
-                return posts
-        
-        # Fallback to sample data
-        logger.warning(f"Using fallback sample data for {hashtag}")
-        return self.scrape_hashtag_fallback(hashtag)
-    
+        """Main scraping method - only real Instagram data, no dummy fallback"""
+
+        posts = self.scrape_hashtag_instaloader(hashtag)
+        if not posts:
+            logger.error(f"TIDAK ada post real untuk '{hashtag}' - dilewati (tanpa dummy)")
+
+        return posts
+
     async def process_post(self, post_data: Dict[str, Any]) -> bool:
         """Process and save a single post"""
         try:
@@ -248,19 +286,19 @@ class InstagramWorker:
                 'followers_count': post_data.get('followers_count', 0),
                 'is_verified': post_data.get('is_verified', False),
             }
-            
+
             influencer_id = await self.db.upsert_influencer(influencer_data)
-            
+
             # Analyze sentiment
             sentiment, sentiment_score = sentiment_analyzer.analyze(
                 post_data.get('content', '')
             )
-            
+
             # Extract hashtags and mentions
             content = post_data.get('content', '')
             hashtags = self.extract_hashtags(content)
             mentions = self.extract_mentions(content)
-            
+
             # Prepare post data
             post_insert_data = {
                 'platform_id': self.platform_id,
@@ -281,66 +319,72 @@ class InstagramWorker:
                 'posted_at': post_data['posted_at'],
                 'metadata': post_data.get('metadata'),
             }
-            
+
             # Insert post
             post_id = await self.db.insert_post(post_insert_data)
-            
+
             if post_id:
                 # Update hashtag usage
                 for hashtag in hashtags:
                     await self.db.update_hashtag_usage(hashtag)
-                
+
                 logger.info(f"✓ Saved post {post_data['platform_post_id']} from @{post_data['username']}")
                 return True
             else:
                 logger.debug(f"Post {post_data['platform_post_id']} already exists (skipped)")
-            
+
             return False
-            
+
         except Exception as e:
             logger.error(f"Error processing post: {e}")
             return False
-    
+
     async def run(self):
         """Main worker loop"""
         logger.info("=" * 60)
         logger.info("Starting Instagram worker run...")
         logger.info("=" * 60)
-        
+
         job_id = await self.db.create_scraping_job(self.platform_id)
         posts_collected = 0
         errors = 0
-        
+
         try:
+            if not self.session_valid:
+                message = "Instagram session INVALID - worker dihentikan, tidak ada fallback dummy"
+                logger.error(message)
+                await self.db.update_scraping_job(job_id, 'failed', 0, 0, message)
+                return
+
             for keyword in self.keywords:
                 logger.info(f"\n📍 Processing keyword: {keyword}")
-                
+
                 # Scrape posts for this keyword/hashtag
                 posts = await self.scrape_hashtag(keyword)
-                
+
                 logger.info(f"Found {len(posts)} posts for {keyword}")
-                
+
                 for post in posts:
                     success = await self.process_post(post)
                     if success:
                         posts_collected += 1
                     else:
                         errors += 1
-                
+
                 # Rate limiting between keywords
                 await asyncio.sleep(3)
-            
+
             # Update job as completed
             await self.db.update_scraping_job(
                 job_id, 'completed', posts_collected, errors
             )
-            
+
             logger.info("=" * 60)
             logger.info(f"✓ Instagram worker completed successfully!")
             logger.info(f"  Posts collected: {posts_collected}")
             logger.info(f"  Errors: {errors}")
             logger.info("=" * 60)
-            
+
         except Exception as e:
             logger.error(f"Instagram worker failed: {e}")
             await self.db.update_scraping_job(
@@ -354,9 +398,9 @@ async def main():
     logger.info("=" * 60)
     logger.info("Instagram Worker - Festival Mbois Intelligence Platform")
     logger.info("=" * 60)
-    
+
     worker = InstagramWorker()
-    
+
     try:
         await worker.initialize()
         await worker.run()
