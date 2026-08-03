@@ -43,12 +43,12 @@ export class GetInfluencersQueryDto {
 
   @ApiPropertyOptional({
     description: "Sort by field",
-    enum: ["followersCount", "engagementRate", "postsCount"],
+    enum: ["followersCount", "engagementRate", "postsCount", "followers_count", "engagement_rate", "posts_count"],
     default: "engagementRate",
   })
   @IsOptional()
   @IsString()
-  @IsIn(["followersCount", "engagementRate", "postsCount"])
+  @IsIn(["followersCount", "engagementRate", "postsCount", "followers_count", "engagement_rate", "posts_count"])
   sortBy?: string = "engagementRate";
 
   @ApiPropertyOptional({

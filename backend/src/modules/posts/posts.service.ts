@@ -83,8 +83,15 @@ export class PostsService {
       queryBuilder.andWhere("post.postedAt <= :endDate", { endDate });
     }
 
-    // Apply sorting
-    const sortColumn = `post.${sortBy}`;
+    // Apply sorting - map snake_case DB columns to camelCase entity properties
+    const sortFieldMap: Record<string, string> = {
+      'posted_at': 'postedAt',
+      'engagement_score': 'engagementScore',
+      'likes_count': 'likesCount',
+      'comments_count': 'commentsCount',
+    };
+    const actualSortBy = sortFieldMap[sortBy] || sortBy;
+    const sortColumn = `post.${actualSortBy}`;
     queryBuilder.orderBy(sortColumn, sortOrder);
 
     // Pagination

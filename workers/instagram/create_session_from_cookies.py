@@ -8,14 +8,31 @@ Usage:
 Reads cookies from cookies.txt (Netscape format), injects them into an
 Instaloader instance, validates the session with test_login(), and saves
 the session to instagram_session. No username/password login is performed.
+
+Paths are configurable via env vars:
+    INSTAGRAM_COOKIES_FILE  (default: workers/cookies.txt)
+    INSTAGRAM_SESSION_FILE  (default: workers/instagram_session)
 """
 
+import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 WORKERS_DIR = Path(__file__).resolve().parent.parent
-COOKIES_FILE = WORKERS_DIR / "cookies.txt"
-SESSION_FILE = WORKERS_DIR / "instagram_session"
+
+# Configurable via env var. Defaults to workers/cookies.txt.
+# Example: INSTAGRAM_COOKIES_FILE=C:/Users/you/Downloads/cookies.txt
+COOKIES_FILE = Path(os.getenv("INSTAGRAM_COOKIES_FILE", "cookies.txt"))
+if not COOKIES_FILE.is_absolute():
+    COOKIES_FILE = WORKERS_DIR / COOKIES_FILE
+
+SESSION_FILE = Path(os.getenv("INSTAGRAM_SESSION_FILE", "instagram_session"))
+if not SESSION_FILE.is_absolute():
+    SESSION_FILE = WORKERS_DIR / SESSION_FILE
 
 
 def parse_netscape_cookies(path: Path):

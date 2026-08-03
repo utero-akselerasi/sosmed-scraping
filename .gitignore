@@ -78,3 +78,8 @@ models/*.pth
 *.key
 *.cert
 secrets/
+
+# Browser cookies / sessions (NEVER commit these)
+cookies.txt
+*.session
+instagram_session
