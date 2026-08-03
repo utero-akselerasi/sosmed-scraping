@@ -372,15 +372,17 @@ CORS_ORIGIN=http://localhost:3001
 3. Check if JWT_SECRET matches in backend .env
 
 ### **Issue 5: No Data Showing**
-**Reason:** Database is empty
+**Reason:** Database is empty — content is only created by the scraping workers
 
 **Solution:**
 ```bash
-# Run seeders (if available)
+# Ensure schema is applied and run the canonical seed (admin, platforms, keywords)
 cd backend
 npm run seed
 
-# Or create sample data manually through API
+# Then run the workers to collect real data:
+cd ../workers
+python run_all.py
 ```
 
 ---

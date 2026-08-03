@@ -84,7 +84,7 @@ WORKER_MODE=parallel python run_all.py
 
 **Features:**
 - Instaloader integration for real scraping
-- Fallback to sample data if library not available
+- Skips keyword if no real data available (no sample data generated)
 - Hashtag search
 - Profile data extraction
 - Engagement metrics
@@ -106,7 +106,7 @@ WORKER_MODE=parallel python run_all.py
 
 **Features:**
 - TikTokApi integration (structure ready)
-- Fallback to sample data
+- Skips keyword if no real data available (no sample data generated)
 - Hashtag search
 - Video metadata extraction
 - Engagement metrics
@@ -165,7 +165,7 @@ print(f'Sentiment: {sentiment}, Score: {score}')
 
 ### Test Individual Worker (Dry Run)
 ```bash
-# This will use sample data
+# Collects real data only (skips keywords if the platform API is unavailable)
 python instagram/worker.py
 ```
 

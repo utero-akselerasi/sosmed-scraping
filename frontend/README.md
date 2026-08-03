@@ -15,7 +15,7 @@ Next.js 14 dashboard for Festival Mbois social media analytics.
 ## Features
 
 ### Authentication
-- Login page with demo credentials
+- Login page with JWT authentication
 - JWT token management
 - Protected routes
 - Auto logout on token expiration
@@ -64,8 +64,8 @@ Open http://localhost:3000
 
 ## Default Credentials
 
-- Email: admin@festivalmbois.com
-- Password: admin123
+The default admin user (`admin@festivalmbois.com`) is created by the database
+seed (see `SETUP.md`).
 
 ## Project Structure
 

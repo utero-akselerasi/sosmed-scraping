@@ -281,13 +281,13 @@ You should see:
 
 **In Swagger UI:**
 
-1. Find **POST /auth/register** (or we'll use seed data)
-2. Or manually test login:
+1. Find **POST /auth/register** (to create a new user)
+2. Or test login with the seeded default admin:
 
 ```powershell
-# Test login with default admin (if seeded)
+# Test login with the seeded default admin
 $body = @{
-    email = "admin@example.com"
+    email = "admin@festivalmbois.com"
     password = "admin123"
 } | ConvertTo-Json
 
@@ -421,7 +421,7 @@ start http://localhost:3001
 ## Step 4.6: Login & Navigate
 
 **Login Page:**
-1. Email: `admin@example.com`
+1. Email: `admin@festivalmbois.com`
 2. Password: `admin123`
 3. Click "Login"
 
