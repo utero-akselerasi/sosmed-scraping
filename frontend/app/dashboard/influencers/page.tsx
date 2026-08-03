@@ -14,7 +14,7 @@ export default function InfluencersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [platformId, setPlatformId] = useState<string>('');
-  const [sortBy, setSortBy] = useState('engagement_rate');
+  const [sortBy, setSortBy] = useState('engagementRate');
 
   const { data: influencersData, isLoading } = useQuery({
     queryKey: ['influencers', page, search, platformId, sortBy],
@@ -156,9 +156,9 @@ export default function InfluencersPage() {
               }}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="engagement_rate">Engagement Rate</option>
-              <option value="followers_count">Followers</option>
-              <option value="posts_count">Posts Count</option>
+              <option value="engagementRate">Engagement Rate</option>
+              <option value="followersCount">Followers</option>
+              <option value="postsCount">Posts Count</option>
             </select>
           </div>
         </form>

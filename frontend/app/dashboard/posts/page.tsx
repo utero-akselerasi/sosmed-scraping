@@ -33,7 +33,7 @@ export default function PostsPage() {
       platformId: platformId || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      sortBy: 'posted_at',
+      sortBy: 'postedAt',
       sortOrder: 'DESC',
     }),
   });
@@ -275,8 +275,8 @@ export default function PostsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlatformColor(post.platform?.name || '')}`}>
-                      {post.platform?.name}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlatformColor(post.platformName || '')}`}>
+                      {post.platformName}
                     </span>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSentimentColor(post.sentiment as SentimentType)}`}>
                       {post.sentiment}
@@ -285,6 +285,15 @@ export default function PostsPage() {
                 </div>
 
                 <p className="text-gray-700 dark:text-gray-300 mb-3 line-clamp-3">{post.content}</p>
+
+                {post.mediaUrls && post.mediaUrls.length > 0 && (
+                  <img
+                    src={post.mediaUrls[0]}
+                    alt={post.content || post.platformPostId}
+                    className="w-full max-h-72 object-cover rounded-lg mb-3 border border-gray-200 dark:border-gray-700"
+                    loading="lazy"
+                  />
+                )}
 
                 {post.hashtags && post.hashtags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
