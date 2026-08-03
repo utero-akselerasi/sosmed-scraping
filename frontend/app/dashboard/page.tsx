@@ -43,6 +43,11 @@ export default function DashboardPage() {
     queryFn: () => apiClient.getTrends(),
   });
 
+  const { data: postStats } = useQuery({
+    queryKey: ['posts-stats'],
+    queryFn: () => apiClient.getPostsStats(),
+  });
+
   const handleExport = () => {
     if (overview) {
       ExportService.exportDashboard(overview);
@@ -302,22 +307,30 @@ export default function DashboardPage() {
           <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <ThumbsUp className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Likes</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">
+              {formatCompactNumber(postStats?.totalLikes || 0)}
+            </p>
           </div>
           <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <MessageCircle className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Comments</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">
+              {formatCompactNumber(postStats?.totalComments || 0)}
+            </p>
           </div>
           <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
             <Share2 className="w-6 h-6 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Shares</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">
+              {formatCompactNumber(postStats?.totalShares || 0)}
+            </p>
           </div>
           <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
             <Eye className="w-6 h-6 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600 dark:text-gray-400">Views</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">-</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">
+              {formatCompactNumber(postStats?.totalViews || 0)}
+            </p>
           </div>
         </div>
       </div>
