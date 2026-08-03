@@ -154,8 +154,8 @@ export class PDFReportService {
       
       // Posts Table
       const tableData = posts.slice(0, 50).map(post => [
-        post.platform?.name || 'N/A',
-        post.authorName || 'Unknown',
+        post.platformName || 'N/A',
+        post.influencerName || 'Unknown',
         (post.content || '').substring(0, 50) + '...',
         post.sentiment || 'N/A',
         formatNumber(post.likesCount || 0),

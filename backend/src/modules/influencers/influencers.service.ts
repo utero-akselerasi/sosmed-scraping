@@ -55,9 +55,14 @@ export class InfluencersService {
       );
     }
 
-    // Apply sorting
-    const sortColumn = `influencer.${sortBy}`;
-    queryBuilder.orderBy(sortColumn, sortOrder);
+    // Apply sorting - map snake_case DB columns to camelCase entity properties
+    const sortFieldMap: Record<string, string> = {
+      'followers_count': 'followersCount',
+      'engagement_rate': 'engagementRate',
+      'posts_count': 'postsCount',
+    };
+    const actualSortBy = sortFieldMap[sortBy] || sortBy;
+    queryBuilder.orderBy(`influencer.${actualSortBy}`, sortOrder);
 
     // Pagination
     const skip = (page - 1) * limit;

@@ -86,17 +86,17 @@ export class ExportService {
   static exportPosts(posts: any[]) {
     const columns: ExportColumn[] = [
       { key: 'id', header: 'ID' },
-      { key: 'platform', header: 'Platform' },
+      { key: 'platformName', header: 'Platform' },
       { key: 'content', header: 'Content' },
-      { key: 'authorName', header: 'Author' },
-      { key: 'authorUsername', header: 'Username' },
+      { key: 'influencerName', header: 'Author' },
+      { key: 'influencerUsername', header: 'Username' },
       { key: 'sentiment', header: 'Sentiment' },
       { key: 'likesCount', header: 'Likes' },
       { key: 'commentsCount', header: 'Comments' },
       { key: 'sharesCount', header: 'Shares' },
       { key: 'viewsCount', header: 'Views' },
       { key: 'engagementScore', header: 'Engagement Score', format: (v) => v?.toFixed(2) || '0' },
-      { key: 'publishedAt', header: 'Published At', format: (v) => new Date(v).toLocaleString() },
+      { key: 'postedAt', header: 'Published At', format: (v) => new Date(v).toLocaleString() },
       { key: 'hashtags', header: 'Hashtags', format: (v) => Array.isArray(v) ? v.join(', ') : '' },
     ];
 
@@ -110,9 +110,9 @@ export class ExportService {
   static exportInfluencers(influencers: any[]) {
     const columns: ExportColumn[] = [
       { key: 'id', header: 'ID' },
-      { key: 'name', header: 'Name' },
+      { key: 'fullName', header: 'Name' },
       { key: 'username', header: 'Username' },
-      { key: 'platform', header: 'Platform' },
+      { key: 'platformName', header: 'Platform' },
       { key: 'followersCount', header: 'Followers' },
       { key: 'postsCount', header: 'Total Posts' },
       { key: 'totalLikes', header: 'Total Likes' },
