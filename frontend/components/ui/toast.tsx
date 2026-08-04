@@ -35,7 +35,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: Toast = { ...toast, id };
-    
+
     setToasts((prev) => [...prev, newToast]);
 
     // Auto remove after duration
@@ -79,7 +79,7 @@ export function useToast() {
 
 function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: string) => void }) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-md w-full">
+    <div className="fixed top-4 right-4 z-50 w-full max-w-md space-y-2">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -96,10 +96,10 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   };
 
   const colors = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    success: 'bg-green-50 border-green-200 text-green-800 dark:bg-green-500/10 dark:border-green-500/30 dark:text-green-300',
+    error: 'bg-red-50 border-red-200 text-red-800 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-300',
+    info: 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-300',
+    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-500/10 dark:border-yellow-500/30 dark:text-yellow-300',
   };
 
   const iconColors = {
@@ -111,20 +111,22 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 
   return (
     <div
-      className={`${colors[toast.type]} border rounded-lg shadow-lg p-4 flex items-start space-x-3 animate-slide-in-right`}
+      className={`${colors[toast.type]} flex items-start space-x-3 rounded-xl border p-4 shadow-card animate-slide-in-right`}
+      role="status"
     >
-      <div className={`${iconColors[toast.type]} text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm`}>
+      <div className={`${iconColors[toast.type]} flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white`}>
         {icons[toast.type]}
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-sm">{toast.title}</p>
-        {toast.message && <p className="text-xs mt-1 opacity-90">{toast.message}</p>}
+        <p className="text-sm font-semibold">{toast.title}</p>
+        {toast.message && <p className="mt-1 text-xs opacity-90">{toast.message}</p>}
       </div>
       <button
         onClick={() => onRemove(toast.id)}
-        className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+        aria-label="Dismiss notification"
+        className="flex-shrink-0 text-current opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <X className="w-4 h-4" />
+        <X className="h-4 w-4" />
       </button>
     </div>
   );

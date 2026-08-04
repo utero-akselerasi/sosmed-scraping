@@ -3,11 +3,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { formatNumber, formatPercentage, formatCompactNumber } from '@/lib/format';
-import { TrendingUp, BarChart3, Hash, Heart, Activity, PieChart } from 'lucide-react';
+import { TrendingUp, BarChart3, Hash, Heart, Activity, PieChart, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
 import { SentimentBarChart } from '@/components/charts/sentiment-bar-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
 import { TrendChart } from '@/components/charts/trend-chart';
 import { EngagementAreaChart } from '@/components/charts/area-chart';
+import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { cn } from '@/lib/utils';
 
 export default function AnalyticsPage() {
   const { data: sentiment } = useQuery({
@@ -29,6 +32,11 @@ export default function AnalyticsPage() {
     queryKey: ['trends'],
     queryFn: () => apiClient.getTrends(),
   });
+
+  const sentimentTotal =
+    (sentiment?.overall?.positive || 0) +
+    (sentiment?.overall?.neutral || 0) +
+    (sentiment?.overall?.negative || 0);
 
   // Prepare sentiment pie data
   const sentimentPieData = [
@@ -60,170 +68,157 @@ export default function AnalyticsPage() {
     shares: item.shares || 0,
   })) || [];
 
+  const quickStats = [
+    {
+      label: 'Positive Rate',
+      value: formatPercentage(sentimentTotal ? (sentiment?.overall?.positive || 0) / sentimentTotal : 0),
+      icon: Activity,
+      gradient: 'from-emerald-500 to-emerald-600',
+      iconColor: 'text-emerald-200',
+      labelColor: 'text-emerald-100',
+    },
+    {
+      label: 'Total Engagement',
+      value: formatCompactNumber((engagement?.totalLikes || 0) + (engagement?.totalComments || 0) + (engagement?.totalShares || 0)),
+      icon: Heart,
+      gradient: 'from-blue-500 to-blue-600',
+      iconColor: 'text-blue-200',
+      labelColor: 'text-blue-100',
+    },
+    {
+      label: 'Avg Engagement',
+      value: engagement?.avgEngagementPerPost?.toFixed(1) || '0',
+      icon: BarChart3,
+      gradient: 'from-purple-500 to-purple-600',
+      iconColor: 'text-purple-200',
+      labelColor: 'text-purple-100',
+    },
+    {
+      label: 'Top Hashtags',
+      value: topHashtags?.length || 0,
+      icon: Hash,
+      gradient: 'from-orange-500 to-orange-600',
+      iconColor: 'text-orange-200',
+      labelColor: 'text-orange-100',
+    },
+  ];
+
+  const sentimentStatTiles = [
+    { label: 'Positive', value: sentiment?.overall?.positive || 0, bg: 'bg-emerald-50 dark:bg-emerald-500/10', valueColor: 'text-emerald-600 dark:text-emerald-400', labelColor: 'text-emerald-900 dark:text-emerald-200' },
+    { label: 'Neutral', value: sentiment?.overall?.neutral || 0, bg: 'bg-muted', valueColor: 'text-muted-foreground', labelColor: 'text-card-foreground' },
+    { label: 'Negative', value: sentiment?.overall?.negative || 0, bg: 'bg-red-50 dark:bg-red-500/10', valueColor: 'text-red-600 dark:text-red-400', labelColor: 'text-red-900 dark:text-red-200' },
+  ];
+
+  const engagementStatTiles = [
+    {
+      label: 'Total Likes', value: formatCompactNumber(engagement?.totalLikes || 0), sub: `Avg: ${engagement?.avgLikesPerPost?.toFixed(1) || 0} per post`,
+      gradient: 'from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 border-red-100 dark:border-red-500/20', color: 'text-red-600 dark:text-red-400',
+    },
+    {
+      label: 'Total Comments', value: formatCompactNumber(engagement?.totalComments || 0), sub: `Avg: ${engagement?.avgCommentsPerPost?.toFixed(1) || 0} per post`,
+      gradient: 'from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 border-blue-100 dark:border-blue-500/20', color: 'text-blue-600 dark:text-blue-400',
+    },
+    {
+      label: 'Total Shares', value: formatCompactNumber(engagement?.totalShares || 0), sub: `Avg: ${engagement?.avgSharesPerPost?.toFixed(1) || 0} per post`,
+      gradient: 'from-purple-50 to-indigo-50 dark:from-purple-500/10 dark:to-indigo-500/10 border-purple-100 dark:border-purple-500/20', color: 'text-purple-600 dark:text-purple-400',
+    },
+    {
+      label: 'Total Views', value: formatCompactNumber(engagement?.totalViews || 0), sub: 'Across all platforms',
+      gradient: 'from-orange-50 to-yellow-50 dark:from-orange-500/10 dark:to-yellow-500/10 border-orange-100 dark:border-orange-500/20', color: 'text-orange-600 dark:text-orange-400',
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Deep insights and trends analysis for Festival Mbois
-        </p>
-      </div>
+      <PageHeader
+        title="Analytics Dashboard"
+        description="Deep insights and trends analysis for Festival Mbois"
+      />
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Positive Rate</p>
-              <p className="text-3xl font-bold mt-2">
-                {formatPercentage((sentiment?.overall?.positive || 0) / ((sentiment?.overall?.positive || 0) + (sentiment?.overall?.neutral || 0) + (sentiment?.overall?.negative || 0)))}
-              </p>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+        {quickStats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className={`rounded-xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-card`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm font-medium ${stat.labelColor}`}>{stat.label}</p>
+                  <p className="mt-2 text-3xl font-bold">{stat.value}</p>
+                </div>
+                <Icon className={cn('h-10 w-10', stat.iconColor)} />
+              </div>
             </div>
-            <Activity className="w-10 h-10 text-green-200" />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Engagement</p>
-              <p className="text-3xl font-bold mt-2">
-                {formatCompactNumber((engagement?.totalLikes || 0) + (engagement?.totalComments || 0) + (engagement?.totalShares || 0))}
-              </p>
-            </div>
-            <Heart className="w-10 h-10 text-blue-200" />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Avg Engagement</p>
-              <p className="text-3xl font-bold mt-2">
-                {engagement?.avgEngagementPerPost?.toFixed(1) || '0'}
-              </p>
-            </div>
-            <BarChart3 className="w-10 h-10 text-purple-200" />
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm font-medium">Top Hashtags</p>
-              <p className="text-3xl font-bold mt-2">
-                {topHashtags?.length || 0}
-              </p>
-            </div>
-            <Hash className="w-10 h-10 text-orange-200" />
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sentiment Distribution Pie */}
-        <div className="bg-white rounded-lg shadow p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="p-6">
           <CustomPieChart
             data={sentimentPieData}
             title="Overall Sentiment Distribution"
-            colors={['#10b981', '#6b7280', '#ef4444']}
+            colors={['#10b981', '#64748b', '#ef4444']}
           />
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-            <div className="p-3 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">
-                {formatNumber(sentiment?.overall?.positive || 0)}
-              </p>
-              <p className="text-xs text-green-900 mt-1">Positive</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-600">
-                {formatNumber(sentiment?.overall?.neutral || 0)}
-              </p>
-              <p className="text-xs text-gray-900 mt-1">Neutral</p>
-            </div>
-            <div className="p-3 bg-red-50 rounded-lg">
-              <p className="text-2xl font-bold text-red-600">
-                {formatNumber(sentiment?.overall?.negative || 0)}
-              </p>
-              <p className="text-xs text-red-900 mt-1">Negative</p>
-            </div>
+            {sentimentStatTiles.map((tile) => (
+              <div key={tile.label} className={cn('rounded-xl p-3', tile.bg)}>
+                <p className={cn('text-2xl font-bold', tile.valueColor)}>
+                  {formatNumber(tile.value)}
+                </p>
+                <p className={cn('mt-1 text-xs', tile.labelColor)}>{tile.label}</p>
+              </div>
+            ))}
           </div>
-        </div>
+        </Card>
 
-        {/* Posts Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <Card className="p-6">
           <TrendChart data={dailyTrendData} title="Posts & Engagement Trend (14 Days)" />
-        </div>
+        </Card>
       </div>
 
       {/* Sentiment by Platform Bar Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <SentimentBarChart 
+      <Card className="p-6">
+        <SentimentBarChart
           data={platformSentimentData}
           title="Sentiment Analysis by Platform"
         />
-      </div>
+      </Card>
 
       {/* Engagement Area Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <Card className="p-6">
         <EngagementAreaChart
           data={engagementOverTimeData}
           title="Engagement Metrics Over Time (14 Days)"
         />
-      </div>
+      </Card>
 
       {/* Engagement Stats Grid */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Heart className="w-5 h-5 mr-2 text-red-500" />
+      <Card className="p-6">
+        <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
+          <Heart className="mr-2 h-5 w-5 text-red-500" />
           Engagement Statistics
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border border-red-100">
-            <p className="text-sm text-gray-600 font-medium">Total Likes</p>
-            <p className="text-3xl font-bold text-red-600 mt-2">
-              {formatCompactNumber(engagement?.totalLikes || 0)}
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Avg: {engagement?.avgLikesPerPost?.toFixed(1) || 0} per post
-            </p>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-100">
-            <p className="text-sm text-gray-600 font-medium">Total Comments</p>
-            <p className="text-3xl font-bold text-blue-600 mt-2">
-              {formatCompactNumber(engagement?.totalComments || 0)}
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Avg: {engagement?.avgCommentsPerPost?.toFixed(1) || 0} per post
-            </p>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
-            <p className="text-sm text-gray-600 font-medium">Total Shares</p>
-            <p className="text-3xl font-bold text-purple-600 mt-2">
-              {formatCompactNumber(engagement?.totalShares || 0)}
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Avg: {engagement?.avgSharesPerPost?.toFixed(1) || 0} per post
-            </p>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg border border-orange-100">
-            <p className="text-sm text-gray-600 font-medium">Total Views</p>
-            <p className="text-3xl font-bold text-orange-600 mt-2">
-              {formatCompactNumber(engagement?.totalViews || 0)}
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Across all platforms
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {engagementStatTiles.map((tile) => (
+            <div key={tile.label} className={cn('rounded-xl border bg-gradient-to-br p-4 text-center', tile.gradient)}>
+              <p className="text-sm font-medium text-muted-foreground">{tile.label}</p>
+              <p className={cn('mt-2 text-3xl font-bold', tile.color)}>
+                {tile.value}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {tile.sub}
+              </p>
+            </div>
+          ))}
         </div>
-      </div>
+      </Card>
 
       {/* Top Hashtags Cloud */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Hash className="w-5 h-5 mr-2 text-blue-500" />
+      <Card className="p-6">
+        <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
+          <Hash className="mr-2 h-5 w-5 text-primary" />
           Top Trending Hashtags
         </h2>
         <div className="flex flex-wrap gap-3">
@@ -233,11 +228,11 @@ export default function AnalyticsPage() {
             return (
               <div
                 key={idx}
-                className="px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-full border border-blue-200 hover:shadow-md transition-all cursor-pointer"
+                className="cursor-pointer rounded-full border border-blue-200 bg-primary/5 px-4 py-2 transition-all duration-200 hover:border-primary/40 hover:shadow-card-hover dark:border-blue-500/20"
                 style={{ fontSize: `${size}px`, opacity }}
               >
-                <span className="font-medium text-blue-900">{item.hashtag}</span>
-                <span className="ml-2 text-xs text-blue-600 font-bold">
+                <span className="font-medium text-blue-900 dark:text-blue-200">{item.hashtag}</span>
+                <span className="ml-2 text-xs font-bold text-blue-600 dark:text-blue-400">
                   {formatNumber(item.count)}
                 </span>
               </div>
@@ -245,151 +240,137 @@ export default function AnalyticsPage() {
           })}
         </div>
         {!topHashtags || topHashtags.length === 0 && (
-          <p className="text-center text-gray-500 py-8">
+          <p className="py-8 text-center text-muted-foreground">
             No hashtags data available yet
           </p>
         )}
-      </div>
+      </Card>
 
       {/* Top Engaging Posts */}
       {engagement?.topEngagingPosts && engagement.topEngagingPosts.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+        <Card className="p-6">
+          <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
+            <TrendingUp className="mr-2 h-5 w-5 text-emerald-500" />
             Top Engaging Posts
           </h2>
           <div className="space-y-3">
             {engagement.topEngagingPosts.slice(0, 5).map((post: any, idx: number) => (
-              <div key={post.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-all">
+              <div key={post.id} className="rounded-xl border border-border p-4 transition-all duration-200 hover:bg-accent hover:border-primary/30">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full">
+                    <div className="mb-2 flex items-center space-x-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-xs font-bold text-white">
                         {idx + 1}
                       </span>
-                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded font-medium">
+                      <span className="rounded bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 dark:bg-purple-500/10 dark:text-purple-300">
                         {post.platform}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded font-medium ${
-                        post.sentiment === 'positive' ? 'bg-green-100 text-green-800' :
-                        post.sentiment === 'negative' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={cn(
+                          'rounded px-2 py-1 text-xs font-medium',
+                          post.sentiment === 'positive'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300'
+                            : post.sentiment === 'negative'
+                              ? 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300'
+                              : 'bg-muted text-muted-foreground'
+                        )}
+                      >
                         {post.sentiment || 'neutral'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700 line-clamp-2">{post.content}</p>
-                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                      <span>?? {formatCompactNumber(post.likesCount || 0)}</span>
-                      <span>?? {formatCompactNumber(post.commentsCount || 0)}</span>
-                      <span>?? {formatCompactNumber(post.sharesCount || 0)}</span>
+                    <p className="line-clamp-2 text-sm text-card-foreground/90">{post.content}</p>
+                    <div className="mt-2 flex items-center space-x-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {formatCompactNumber(post.likesCount || 0)}</span>
+                      <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {formatCompactNumber(post.commentsCount || 0)}</span>
+                      <span className="flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> {formatCompactNumber(post.sharesCount || 0)}</span>
                     </div>
                   </div>
                   <div className="ml-4 text-right">
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                       {post.engagementScore.toFixed(1)}
                     </p>
-                    <p className="text-xs text-gray-500">engagement</p>
+                    <p className="text-xs text-muted-foreground">engagement</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Sentiment by Platform Detail */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <PieChart className="w-5 h-5 mr-2 text-indigo-500" />
+      <Card className="p-6">
+        <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
+          <PieChart className="mr-2 h-5 w-5 text-indigo-500" />
           Detailed Sentiment by Platform
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sentiment?.byPlatform?.map((platform: any) => {
             const total = platform.positive + platform.neutral + platform.negative;
             const positivePercent = total > 0 ? (platform.positive / total) * 100 : 0;
             const neutralPercent = total > 0 ? (platform.neutral / total) * 100 : 0;
             const negativePercent = total > 0 ? (platform.negative / total) * 100 : 0;
 
+            const bars = [
+              { label: 'Positive', pct: positivePercent, text: 'text-emerald-700 dark:text-emerald-400', bar: 'bg-emerald-500' },
+              { label: 'Neutral', pct: neutralPercent, text: 'text-card-foreground', bar: 'bg-muted-foreground' },
+              { label: 'Negative', pct: negativePercent, text: 'text-red-700 dark:text-red-400', bar: 'bg-red-500' },
+            ];
+
             return (
-              <div key={platform.platformName} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <h3 className="font-semibold text-gray-900 mb-3 text-center">{platform.platformName}</h3>
-                
+              <div key={platform.platformName} className="rounded-xl border border-border p-4 transition-all duration-200 hover:shadow-card-hover">
+                <h3 className="mb-3 text-center font-semibold text-card-foreground">{platform.platformName}</h3>
+
                 {/* Progress bars */}
-                <div className="space-y-2 mb-3">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-green-700">Positive</span>
-                      <span className="text-green-700 font-bold">{positivePercent.toFixed(1)}%</span>
+                <div className="mb-3 space-y-2">
+                  {bars.map((bar) => (
+                    <div key={bar.label}>
+                      <div className={cn('mb-1 flex justify-between text-xs', bar.text)}>
+                        <span>{bar.label}</span>
+                        <span className="font-bold">{bar.pct.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-muted">
+                        <div
+                          className={cn('h-2 rounded-full transition-all duration-500', bar.bar)}
+                          style={{ width: `${bar.pct}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full transition-all"
-                        style={{ width: `${positivePercent}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-700">Neutral</span>
-                      <span className="text-gray-700 font-bold">{neutralPercent.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gray-500 h-2 rounded-full transition-all"
-                        style={{ width: `${neutralPercent}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-red-700">Negative</span>
-                      <span className="text-red-700 font-bold">{negativePercent.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-500 h-2 rounded-full transition-all"
-                        style={{ width: `${negativePercent}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Counts */}
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200">
+                <div className="grid grid-cols-3 gap-2 border-t border-border pt-3">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-green-600">
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                       {formatNumber(platform.positive)}
                     </p>
-                    <p className="text-xs text-gray-600">Positive</p>
+                    <p className="text-xs text-muted-foreground">Positive</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-gray-600">
+                    <p className="text-lg font-bold text-muted-foreground">
                       {formatNumber(platform.neutral)}
                     </p>
-                    <p className="text-xs text-gray-600">Neutral</p>
+                    <p className="text-xs text-muted-foreground">Neutral</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-red-600">
+                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
                       {formatNumber(platform.negative)}
                     </p>
-                    <p className="text-xs text-gray-600">Negative</p>
+                    <p className="text-xs text-muted-foreground">Negative</p>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
-        
+
         {(!sentiment?.byPlatform || sentiment.byPlatform.length === 0) && (
-          <p className="text-center text-gray-500 py-8">
+          <p className="py-8 text-center text-muted-foreground">
             No platform sentiment data available yet
           </p>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
-

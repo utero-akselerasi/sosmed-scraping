@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Save, Bookmark, Trash2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FilterPreset {
   id: string;
@@ -20,6 +21,7 @@ export function FilterPresets({ onApplyPreset, currentFilters }: FilterPresetsPr
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [presetName, setPresetName] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Load presets from localStorage
@@ -28,6 +30,24 @@ export function FilterPresets({ onApplyPreset, currentFilters }: FilterPresetsPr
       setPresets(JSON.parse(savedPresets));
     }
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen]);
 
   const savePreset = () => {
     if (!presetName.trim()) return;
@@ -59,103 +79,119 @@ export function FilterPresets({ onApplyPreset, currentFilters }: FilterPresetsPr
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm text-card-foreground shadow-card transition-all duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Bookmark className="w-4 h-4" />
+        <Bookmark className="h-4 w-4 text-primary" />
         Filter Presets
         {presets.length > 0 && (
-          <span className="ml-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full">
+          <span className="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
             {presets.length}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Filter Presets</h3>
+        <div className="absolute top-full mt-2 left-0 z-50 w-80 rounded-xl border border-border bg-popover shadow-popover">
+          <div className="border-b border-border p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-popover-foreground">Filter Presets</h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                aria-label="Close"
+                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {!isSaving ? (
-              <button
+              <Button
                 onClick={() => setIsSaving(true)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                className="w-full"
+                variant="primary"
+                size="md"
               >
-                <Save className="w-4 h-4" />
+                <Save className="h-4 w-4" />
                 Save Current Filters
-              </button>
+              </Button>
             ) : (
               <div className="space-y-2">
                 <input
                   type="text"
                   value={presetName}
                   onChange={(e) => setPresetName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') savePreset();
+                    if (e.key === 'Escape') {
+                      setIsSaving(false);
+                      setPresetName('');
+                    }
+                  }}
                   placeholder="Enter preset name..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
                   autoFocus
                 />
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     onClick={savePreset}
                     disabled={!presetName.trim()}
-                    className="flex-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1"
+                    size="md"
                   >
                     Save
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       setIsSaving(false);
                       setPresetName('');
                     }}
-                    className="flex-1 px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
+                    variant="outline"
+                    className="flex-1"
+                    size="md"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto p-2">
             {presets.length > 0 ? (
-              <div className="p-2">
+              <div>
                 {presets.map((preset) => (
                   <div
                     key={preset.id}
-                    className="group flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="group flex items-center justify-between rounded-lg p-3 transition-colors duration-150 hover:bg-accent"
                   >
                     <button
                       onClick={() => applyPreset(preset)}
-                      className="flex-1 text-left"
+                      className="flex-1 text-left focus-visible:outline-none"
                     >
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">
+                      <p className="text-sm font-medium text-popover-foreground">
                         {preset.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {new Date(preset.createdAt).toLocaleDateString()}
                       </p>
                     </button>
                     <button
                       onClick={() => deletePreset(preset.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-all"
+                      aria-label={`Delete preset ${preset.name}`}
+                      className="rounded-md p-1.5 text-red-500 opacity-0 transition-all duration-150 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 focus-visible:opacity-100"
                     >
-                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+              <div className="p-8 text-center text-sm text-muted-foreground">
                 No presets saved yet
               </div>
             )}

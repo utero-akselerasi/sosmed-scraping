@@ -54,13 +54,13 @@ export function formatDateTime(date: Date | string): string {
 export function getSentimentColor(sentiment: string): string {
   switch (sentiment.toLowerCase()) {
     case 'positive':
-      return 'text-green-600 bg-green-100';
+      return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300';
     case 'negative':
-      return 'text-red-600 bg-red-100';
+      return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300';
     case 'neutral':
-      return 'text-gray-600 bg-gray-100';
+      return 'bg-muted text-muted-foreground';
     default:
-      return 'text-gray-600 bg-gray-100';
+      return 'bg-muted text-muted-foreground';
   }
 }
 
@@ -70,20 +70,20 @@ export function getSentimentColor(sentiment: string): string {
 export function getPlatformColor(platform: string): string {
   switch (platform.toLowerCase()) {
     case 'instagram':
-      return 'text-pink-600 bg-pink-100';
+      return 'bg-pink-50 text-pink-700 dark:bg-pink-500/10 dark:text-pink-300';
     case 'tiktok':
-      return 'text-black bg-gray-100';
+      return 'bg-muted text-card-foreground';
     case 'facebook':
-      return 'text-blue-600 bg-blue-100';
+      return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300';
     case 'twitter':
     case 'x':
-      return 'text-sky-600 bg-sky-100';
+      return 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300';
     case 'threads':
-      return 'text-purple-600 bg-purple-100';
+      return 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300';
     case 'website':
-      return 'text-gray-600 bg-gray-100';
+      return 'bg-muted text-muted-foreground';
     default:
-      return 'text-gray-600 bg-gray-100';
+      return 'bg-muted text-muted-foreground';
   }
 }
 

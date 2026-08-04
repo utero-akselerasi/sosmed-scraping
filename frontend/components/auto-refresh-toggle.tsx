@@ -18,35 +18,34 @@ export function AutoRefreshToggle({
   interval = 30,
 }: AutoRefreshToggleProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2 shadow-card">
       <button
         onClick={onToggle}
+        role="switch"
+        aria-checked={isEnabled}
+        aria-label="Toggle auto-refresh"
         className={cn(
-          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-          isEnabled ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          isEnabled ? 'bg-primary' : 'bg-muted-foreground/30'
         )}
       >
         <span
           className={cn(
-            'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+            'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200',
             isEnabled ? 'translate-x-6' : 'translate-x-1'
           )}
         />
       </button>
-      
+
       <div className="flex items-center gap-2">
         <RefreshCw
-          className={cn(
-            'w-4 h-4',
-            isEnabled ? 'text-blue-500 animate-spin' : 'text-gray-400'
-          )}
-          style={{ animationDuration: '3s' }}
+          className={cn('h-4 w-4 transition-colors duration-200', isEnabled ? 'text-primary' : 'text-muted-foreground')}
         />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span className="text-sm font-medium text-card-foreground">
           Auto-refresh
         </span>
         {isEnabled && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs tabular-nums text-muted-foreground">
             ({countdown}s)
           </span>
         )}

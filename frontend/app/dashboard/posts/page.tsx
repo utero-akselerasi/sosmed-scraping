@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor, truncateText } from '@/lib/format';
-import { Search, Filter, ExternalLink } from 'lucide-react';
+import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor } from '@/lib/format';
+import { Search, Filter, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, TrendingUp } from 'lucide-react';
 import { Post, SentimentType } from '@/types';
 import { ExportDropdown } from '@/components/export-button';
 import { ExportService } from '@/lib/export/export-service';
@@ -12,6 +12,13 @@ import { PostDetailModal } from '@/components/ui/post-detail-modal';
 import { useToast } from '@/components/ui/toast';
 import { FilterPresets } from '@/components/ui/filter-presets';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+const inputClasses =
+  'w-full rounded-lg border border-input bg-card px-4 py-2 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40';
 
 export default function PostsPage() {
   const [page, setPage] = useState(1);
@@ -91,13 +98,13 @@ export default function PostsPage() {
     } else {
       setSentiment('');
     }
-    
+
     if (preset.filters.platformId) {
       setPlatformId(preset.filters.platformId);
     } else {
       setPlatformId('');
     }
-    
+
     if (preset.filters.search) {
       setSearch(preset.filters.search);
     }
@@ -109,7 +116,7 @@ export default function PostsPage() {
     if (preset.filters.endDate) {
       setEndDate(preset.filters.endDate);
     }
-    
+
     setPage(1);
     success('Preset Applied', `Applied "${preset.name}" preset`);
   };
@@ -128,52 +135,47 @@ export default function PostsPage() {
     setPage(1);
   };
 
+  const statTiles = stats
+    ? [
+        { label: 'Total Posts', value: formatNumber(stats.totalPosts), bg: 'bg-muted/50 text-card-foreground' },
+        { label: 'Positive', value: formatNumber(stats.sentimentDistribution?.positive || 0), bg: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+        { label: 'Neutral', value: formatNumber(stats.sentimentDistribution?.neutral || 0), bg: 'bg-muted/50 text-muted-foreground' },
+        { label: 'Negative', value: formatNumber(stats.sentimentDistribution?.negative || 0), bg: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' },
+      ]
+    : [];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Posts</h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {postsData?.meta?.total ? formatNumber(postsData.meta.total) : 0} total posts
-          </p>
-        </div>
-        <ExportDropdown 
+      <PageHeader
+        title="Posts"
+        description={postsData?.meta?.total ? `${formatNumber(postsData.meta.total)} total posts` : '0 total posts'}
+      >
+        <ExportDropdown
           onExportCSV={handleExportCSV}
           onExportJSON={handleExportJSON}
           disabled={!postsData?.data || postsData.data.length === 0}
         />
-      </div>
+      </PageHeader>
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Posts</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.totalPosts)}</p>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg shadow p-4">
-            <p className="text-sm text-green-900 dark:text-green-300">Positive</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatNumber(stats.sentimentDistribution?.positive || 0)}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg shadow p-4">
-            <p className="text-sm text-gray-900 dark:text-gray-300">Neutral</p>
-            <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{formatNumber(stats.sentimentDistribution?.neutral || 0)}</p>
-          </div>
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg shadow p-4">
-            <p className="text-sm text-red-900 dark:text-red-300">Negative</p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatNumber(stats.sentimentDistribution?.negative || 0)}</p>
-          </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {statTiles.map((tile) => (
+            <div key={tile.label} className={cn('rounded-xl p-4 shadow-card', tile.bg)}>
+              <p className="text-sm opacity-80">{tile.label}</p>
+              <p className="text-2xl font-bold">{tile.value}</p>
+            </div>
+          ))}
         </div>
       )}
 
       {/* Filter Presets & Date Range */}
-      <div className="flex items-center gap-3">
-        <FilterPresets 
+      <div className="flex flex-wrap items-center gap-3">
+        <FilterPresets
           onApplyPreset={handleApplyPreset}
           currentFilters={getCurrentFilters()}
         />
-        <DateRangePicker 
+        <DateRangePicker
           startDate={startDate || null}
           endDate={endDate || null}
           onChange={handleDateRangeChange}
@@ -181,33 +183,31 @@ export default function PostsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h2>
+      <Card className="p-4">
+        <div className="mb-4 flex items-center gap-2">
+          <Filter className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-card-foreground">Filters</h2>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
+        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="mb-1 block text-sm font-medium text-card-foreground">
               Search
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by content, author, hashtags..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className={cn(inputClasses, 'pl-10')}
               />
             </div>
           </div>
 
-          {/* Sentiment */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="mb-1 block text-sm font-medium text-card-foreground">
               Sentiment
             </label>
             <select
@@ -216,7 +216,7 @@ export default function PostsPage() {
                 setSentiment(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className={inputClasses}
             >
               <option value="">All Sentiments</option>
               <option value="positive">Positive</option>
@@ -225,9 +225,8 @@ export default function PostsPage() {
             </select>
           </div>
 
-          {/* Platform */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="mb-1 block text-sm font-medium text-card-foreground">
               Platform
             </label>
             <select
@@ -236,7 +235,7 @@ export default function PostsPage() {
                 setPlatformId(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className={inputClasses}
             >
               <option value="">All Platforms</option>
               {platforms?.map((platform: any) => (
@@ -247,79 +246,80 @@ export default function PostsPage() {
             </select>
           </div>
         </form>
-      </div>
+      </Card>
 
       {/* Posts List */}
       {isLoading ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading posts...</p>
-        </div>
+        <Card className="p-12 text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
+          <p className="mt-4 text-sm text-muted-foreground">Loading posts...</p>
+        </Card>
       ) : postsData?.data && postsData.data.length > 0 ? (
         <>
           <div className="space-y-4">
             {postsData.data.map((post: any) => (
-              <div 
-                key={post.id} 
-                className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              <Card
+                key={post.id}
+                interactive
+                className="p-6"
                 onClick={() => handlePostClick(post)}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="mb-3 flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 font-bold text-white">
                       {post.influencerName?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{post.influencerName}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">@{post.influencerUsername}</p>
+                      <p className="font-semibold text-card-foreground">{post.influencerName}</p>
+                      <p className="text-sm text-muted-foreground">@{post.influencerUsername}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPlatformColor(post.platformName || '')}`}>
+                    <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getPlatformColor(post.platformName || ''))}>
                       {post.platformName}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSentimentColor(post.sentiment as SentimentType)}`}>
+                    <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getSentimentColor(post.sentiment as SentimentType))}>
                       {post.sentiment}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-gray-700 dark:text-gray-300 mb-3 line-clamp-3">{post.content}</p>
+                <p className="mb-3 line-clamp-3 text-card-foreground/90">{post.content}</p>
 
                 {post.mediaUrls && post.mediaUrls.length > 0 && (
                   <img
                     src={post.mediaUrls[0]}
                     alt={post.content || post.platformPostId}
-                    className="w-full max-h-72 object-cover rounded-lg mb-3 border border-gray-200 dark:border-gray-700"
+                    className="mb-3 max-h-72 w-full rounded-xl border border-border object-cover"
                     loading="lazy"
                   />
                 )}
 
                 {post.hashtags && post.hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     {post.hashtags.slice(0, 5).map((tag: any, idx: number) => (
-                      <span key={idx} className="text-blue-600 dark:text-blue-400 text-sm">
+                      <span key={idx} className="text-sm text-primary">
                         #{tag}
                       </span>
                     ))}
                     {post.hashtags.length > 5 && (
-                      <span className="text-gray-500 dark:text-gray-400 text-sm">+{post.hashtags.length - 5} more</span>
+                      <span className="text-sm text-muted-foreground">+{post.hashtags.length - 5} more</span>
                     )}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-                    <span>?? {formatNumber(post.likesCount)}</span>
-                    <span>?? {formatNumber(post.commentsCount)}</span>
-                    <span>?? {formatNumber(post.sharesCount)}</span>
-                    {post.viewsCount > 0 && <span>??? {formatNumber(post.viewsCount)}</span>}
-                    <span className="text-green-600 dark:text-green-400 font-medium">
-                      ?? {post.engagementScore.toFixed(1)}
+                <div className="flex items-center justify-between border-t border-border pt-3">
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1"><ThumbsUp className="h-4 w-4" /> {formatNumber(post.likesCount)}</span>
+                    <span className="flex items-center gap-1"><MessageCircle className="h-4 w-4" /> {formatNumber(post.commentsCount)}</span>
+                    <span className="flex items-center gap-1"><Share2 className="h-4 w-4" /> {formatNumber(post.sharesCount)}</span>
+                    {post.viewsCount > 0 && <span className="flex items-center gap-1"><Eye className="h-4 w-4" /> {formatNumber(post.viewsCount)}</span>}
+                    <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+                      <TrendingUp className="h-4 w-4" /> {post.engagementScore.toFixed(1)}
                     </span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-muted-foreground">
                       {formatRelativeTime(post.postedAt)}
                     </span>
                     {post.postUrl && (
@@ -327,58 +327,60 @@ export default function PostsPage() {
                         href={post.postUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                        aria-label="Open original post"
+                        className="text-primary transition-colors hover:text-primary/80"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <ExternalLink className="h-4 w-4" />
                       </a>
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
 
           {/* Pagination */}
           {postsData.meta && postsData.meta.totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            <Card className="flex flex-col items-center justify-between gap-3 p-4 sm:flex-row">
+              <p className="text-sm text-muted-foreground">
                 Showing {(postsData.meta.page - 1) * postsData.meta.limit + 1} to{' '}
                 {Math.min(postsData.meta.page * postsData.meta.limit, postsData.meta.total)} of{' '}
                 {formatNumber(postsData.meta.total)} posts
               </p>
-              <div className="flex space-x-2">
-                <button
+              <div className="flex items-center space-x-2">
+                <Button
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white"
+                  variant="outline"
+                  size="sm"
                 >
                   Previous
-                </button>
-                <span className="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                </Button>
+                <span className="rounded-lg bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
                   Page {page} of {postsData.meta.totalPages}
                 </span>
-                <button
+                <Button
                   onClick={() => setPage(page + 1)}
                   disabled={page >= postsData.meta.totalPages}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white"
+                  size="sm"
                 >
                   Next
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           )}
         </>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">No posts found</p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Try adjusting your filters</p>
-        </div>
+        <Card className="p-12 text-center">
+          <p className="text-lg text-card-foreground">No posts found</p>
+          <p className="mt-2 text-sm text-muted-foreground">Try adjusting your filters</p>
+        </Card>
       )}
 
       {/* Post Detail Modal */}
       {selectedPost && (
-        <PostDetailModal 
+        <PostDetailModal
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
         />

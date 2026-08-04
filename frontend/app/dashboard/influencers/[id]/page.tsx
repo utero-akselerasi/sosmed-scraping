@@ -4,23 +4,19 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { formatNumber, formatCompactNumber } from '@/lib/format';
-import { 
+import {
   ArrowLeft,
-  Users, 
-  TrendingUp, 
+  Users,
+  TrendingUp,
   Heart,
   MessageCircle,
   Share2,
-  Eye,
-  Calendar,
-  MapPin,
-  Link as LinkIcon,
   CheckCircle,
   BarChart3,
 } from 'lucide-react';
-import Link from 'next/link';
 import { CustomPieChart } from '@/components/charts/pie-chart';
 import { EngagementAreaChart } from '@/components/charts/area-chart';
+import { Card } from '@/components/ui/card';
 
 export default function InfluencerDetailPage() {
   const params = useParams();
@@ -64,10 +60,10 @@ export default function InfluencerDetailPage() {
 
   if (isLoadingInfluencer) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading influencer...</p>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
+          <p className="mt-4 text-sm text-muted-foreground">Loading influencer...</p>
         </div>
       </div>
     );
@@ -75,8 +71,8 @@ export default function InfluencerDetailPage() {
 
   if (!influencer) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">Influencer not found</p>
+      <div className="py-12 text-center">
+        <p className="text-muted-foreground">Influencer not found</p>
       </div>
     );
   }
@@ -97,45 +93,59 @@ export default function InfluencerDetailPage() {
 
   const pieColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
 
+  const mainStats = [
+    { label: 'Followers', value: formatCompactNumber(influencer.followersCount), icon: Users, color: 'text-primary' },
+    { label: 'Total Posts', value: formatNumber(influencer.totalPosts || influencer.postsCount), icon: BarChart3, color: 'text-emerald-500' },
+    { label: 'Engagement Rate', value: `${influencer.engagementRate?.toFixed(2)}%`, icon: TrendingUp, color: 'text-purple-500' },
+    { label: 'Avg Engagement', value: formatCompactNumber(influencer.avgEngagementScore || 0), icon: Heart, color: 'text-red-500' },
+  ];
+
+  const extraStats = [
+    { label: 'Total Likes', value: formatCompactNumber(influencer.totalLikes), icon: Heart, bg: 'bg-red-50 dark:bg-red-500/10', color: 'text-red-500' },
+    { label: 'Total Comments', value: formatCompactNumber(influencer.totalComments), icon: MessageCircle, bg: 'bg-primary/5', color: 'text-primary' },
+    { label: 'Total Shares', value: formatCompactNumber(influencer.totalShares), icon: Share2, bg: 'bg-emerald-500/5', color: 'text-emerald-500' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
       <div className="flex items-center gap-4">
-        <button 
-          onClick={() => router.back()} 
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+        <button
+          onClick={() => router.back()}
+          aria-label="Go back"
+          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Influencer Profile</h1>
+        <h1 className="text-2xl font-bold text-card-foreground">Influencer Profile</h1>
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-start justify-between mb-6">
+      <Card className="p-6">
+        <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-4">
             {influencer.profilePictureUrl ? (
-              <img 
-                src={influencer.profilePictureUrl} 
+              <img
+                src={influencer.profilePictureUrl}
                 alt={influencer.fullName}
-                className="w-20 h-20 rounded-full object-cover"
+                className="h-20 w-20 rounded-full border-2 border-border object-cover shadow-card-hover"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white shadow-card-hover">
                 {influencer.fullName?.charAt(0).toUpperCase() || influencer.username?.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-card-foreground">
                   {influencer.fullName || influencer.username}
                 </h2>
                 {influencer.isVerified && (
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
+                  <CheckCircle className="h-5 w-5 text-primary" />
                 )}
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">@{influencer.username}</p>
-              <span className="inline-block mt-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium rounded">
+              <p className="text-sm text-muted-foreground">@{influencer.username}</p>
+              <span className="mt-1 inline-block rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                 {influencer.platformName}
               </span>
             </div>
@@ -144,131 +154,104 @@ export default function InfluencerDetailPage() {
 
         {/* Bio */}
         {influencer.bio && (
-          <p className="text-gray-700 dark:text-gray-300 mb-6">{influencer.bio}</p>
+          <p className="mb-6 text-card-foreground/80">{influencer.bio}</p>
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <Users className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">Followers</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
-              {formatCompactNumber(influencer.followersCount)}
-            </p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <BarChart3 className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Posts</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
-              {formatNumber(influencer.totalPosts || influencer.postsCount)}
-            </p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">Engagement Rate</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
-              {influencer.engagementRate?.toFixed(2)}%
-            </p>
-          </div>
-          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <Heart className="w-6 h-6 text-red-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 dark:text-gray-400">Avg Engagement</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">
-              {formatCompactNumber(influencer.avgEngagementScore || 0)}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {mainStats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className="rounded-xl bg-muted/50 p-4 text-center">
+                <Icon className={`mx-auto mb-2 h-6 w-6 ${stat.color}`} />
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-xl font-bold text-card-foreground">
+                  {stat.value}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         {/* Additional Stats */}
         {influencer.totalLikes !== undefined && (
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <Heart className="w-5 h-5 text-red-600 mx-auto mb-1" />
-              <p className="text-xs text-gray-600 dark:text-gray-400">Total Likes</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatCompactNumber(influencer.totalLikes)}
-              </p>
-            </div>
-            <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <MessageCircle className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <p className="text-xs text-gray-600 dark:text-gray-400">Total Comments</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatCompactNumber(influencer.totalComments)}
-              </p>
-            </div>
-            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <Share2 className="w-5 h-5 text-green-600 mx-auto mb-1" />
-              <p className="text-xs text-gray-600 dark:text-gray-400">Total Shares</p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatCompactNumber(influencer.totalShares)}
-              </p>
-            </div>
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {extraStats.map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div key={stat.label} className={`rounded-xl p-3 text-center ${stat.bg}`}>
+                  <Icon className={`mx-auto mb-1 h-5 w-5 ${stat.color}`} />
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <p className="text-lg font-bold text-card-foreground">
+                    {stat.value}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Sentiment Distribution */}
       {influencer.sentimentDistribution && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sentiment Analysis</h3>
+        <Card className="p-6">
+          <h3 className="mb-4 text-lg font-semibold text-card-foreground">Sentiment Analysis</h3>
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <p className="text-sm text-green-900 dark:text-green-300">Positive</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-500/10">
+              <p className="text-sm text-emerald-900 dark:text-emerald-200">Positive</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {influencer.sentimentDistribution.positive}
               </p>
             </div>
-            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-900 dark:text-gray-300">Neutral</p>
-              <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+            <div className="rounded-xl bg-muted p-4 text-center">
+              <p className="text-sm text-card-foreground">Neutral</p>
+              <p className="text-2xl font-bold text-muted-foreground">
                 {influencer.sentimentDistribution.neutral}
               </p>
             </div>
-            <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <p className="text-sm text-red-900 dark:text-red-300">Negative</p>
+            <div className="rounded-xl bg-red-50 p-4 text-center dark:bg-red-500/10">
+              <p className="text-sm text-red-900 dark:text-red-200">Negative</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {influencer.sentimentDistribution.negative}
               </p>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Engagement Over Time */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="p-6">
+          <h3 className="mb-4 text-lg font-semibold text-card-foreground">
             Engagement Over Time (Last 30 Days)
           </h3>
           {isLoadingEngagement ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
             </div>
           ) : chartEngagementData.length > 0 ? (
             <EngagementAreaChart data={chartEngagementData} />
           ) : (
-            <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
               No engagement data available
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Content Types */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Content Type Distribution</h3>
+        <Card className="p-6">
+          <h3 className="mb-4 text-lg font-semibold text-card-foreground">Content Type Distribution</h3>
           {isLoadingContentTypes ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
             </div>
           ) : chartContentTypeData.length > 0 ? (
             <CustomPieChart data={chartContentTypeData} colors={pieColors} />
           ) : (
-            <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
               No content type data available
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

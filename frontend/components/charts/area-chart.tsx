@@ -1,6 +1,8 @@
 ﻿'use client';
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTheme } from '@/contexts/theme-context';
+import { getChartTheme, getChartTooltipStyle } from './chart-theme';
 
 interface EngagementAreaChartProps {
   data: Array<{
@@ -12,15 +14,18 @@ interface EngagementAreaChartProps {
   label?: string;
 }
 
-export function EngagementAreaChart({ 
-  data, 
-  title, 
+export function EngagementAreaChart({
+  data,
+  title,
   color = '#3b82f6',
-  label = 'Engagement'
+  label = 'Engagement',
 }: EngagementAreaChartProps) {
+  const { theme } = useTheme();
+  const chartTheme = getChartTheme(theme);
+
   return (
     <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
+      {title && <h3 className="mb-4 text-lg font-semibold text-card-foreground">{title}</h3>}
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={data}>
           <defs>
@@ -29,29 +34,26 @@ export function EngagementAreaChart({
               <stop offset="95%" stopColor={color} stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis 
-            dataKey="date" 
-            stroke="#6b7280"
-            style={{ fontSize: '12px' }}
+          <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+          <XAxis
+            dataKey="date"
+            stroke={chartTheme.axis}
+            tick={{ fill: chartTheme.axis, fontSize: 12 }}
           />
-          <YAxis 
-            stroke="#6b7280"
-            style={{ fontSize: '12px' }}
+          <YAxis
+            stroke={chartTheme.axis}
+            tick={{ fill: chartTheme.axis, fontSize: 12 }}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              padding: '8px 12px'
-            }}
+          <Tooltip
+            contentStyle={getChartTooltipStyle(theme)}
+            labelStyle={{ color: chartTheme.label }}
+            itemStyle={{ color: chartTheme.tooltipText }}
           />
-          <Area 
-            type="monotone" 
-            dataKey="value" 
+          <Area
+            type="monotone"
+            dataKey="value"
             stroke={color}
-            fillOpacity={1} 
+            fillOpacity={1}
             fill="url(#colorValue)"
             name={label}
           />

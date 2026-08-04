@@ -4,13 +4,19 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { User, Mail, Lock, Save, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+
+const inputClasses =
+  'w-full rounded-lg border border-input bg-card py-2 pl-10 pr-4 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [profileData, setProfileData] = useState({
     fullName: user?.fullName || '',
     email: user?.email || '',
@@ -25,7 +31,7 @@ export default function ProfilePage() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
@@ -46,10 +52,10 @@ export default function ProfilePage() {
       }
 
       const updatedUser = await response.json();
-      
+
       // Reload page to update user data
       window.location.reload();
-      
+
       toast.success('Profile updated successfully!');
       setIsEditingProfile(false);
     } catch (error: any) {
@@ -61,7 +67,7 @@ export default function ProfilePage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -92,7 +98,7 @@ export default function ProfilePage() {
         const error = await response.json();
         throw new Error(error.message || 'Failed to change password');
       }
-      
+
       toast.success('Password changed successfully!');
       setPasswordData({
         currentPassword: '',
@@ -108,102 +114,97 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Profile Settings"
+        description="Manage your account settings and preferences"
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Profile Picture */}
         <div className="lg:col-span-1">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <Card className="p-6">
             <div className="flex flex-col items-center">
               <div className="relative">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-4xl font-bold text-white shadow-card-hover">
                   {user?.fullName.charAt(0).toUpperCase()}
                 </div>
-                <button className="absolute bottom-0 right-0 p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600 transition-colors">
-                  <Camera className="w-4 h-4" />
+                <button
+                  aria-label="Upload profile picture"
+                  className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Camera className="h-4 w-4" />
                 </button>
               </div>
-              <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
+              <h3 className="mt-4 text-xl font-semibold text-card-foreground">
                 {user?.fullName}
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{user?.email}</p>
-              <span className="mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full uppercase">
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <span className="mt-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium uppercase text-primary">
                 {user?.role}
               </span>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Profile Information & Password */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6 lg:col-span-2">
           {/* Profile Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <Card className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-card-foreground">
                 Profile Information
               </h2>
               {!isEditingProfile && (
-                <button
-                  onClick={() => setIsEditingProfile(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                >
+                <Button onClick={() => setIsEditingProfile(true)} size="sm">
                   Edit Profile
-                </button>
+                </Button>
               )}
             </div>
 
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-card-foreground">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     value={profileData.fullName}
                     onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                     disabled={!isEditingProfile}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+                    className={inputClasses}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-card-foreground">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                     disabled={!isEditingProfile}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
+                    className={inputClasses}
                   />
                 </div>
               </div>
 
               {isEditingProfile && (
                 <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Save className="w-4 h-4" />
+                  <Button type="submit" disabled={isLoading} loading={isLoading}>
+                    <Save className="h-4 w-4" />
                     {isLoading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    disabled={isLoading}
                     onClick={() => {
                       setIsEditingProfile(false);
                       setProfileData({
@@ -211,96 +212,61 @@ export default function ProfilePage() {
                         email: user?.email || '',
                       });
                     }}
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               )}
             </form>
-          </div>
+          </Card>
 
           {/* Change Password */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <Card className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-card-foreground">
                 Change Password
               </h2>
               {!isChangingPassword && (
-                <button
-                  onClick={() => setIsChangingPassword(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                >
+                <Button onClick={() => setIsChangingPassword(true)} size="sm" variant="outline">
                   Change Password
-                </button>
+                </Button>
               )}
             </div>
 
             {isChangingPassword ? (
               <form onSubmit={handleChangePassword} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      required
-                      disabled={isLoading}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                    />
+                {[
+                  { key: 'currentPassword' as const, label: 'Current Password' },
+                  { key: 'newPassword' as const, label: 'New Password' },
+                  { key: 'confirmPassword' as const, label: 'Confirm New Password' },
+                ].map((field) => (
+                  <div key={field.key}>
+                    <label className="mb-2 block text-sm font-medium text-card-foreground">
+                      {field.label}
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="password"
+                        value={passwordData[field.key]}
+                        onChange={(e) => setPasswordData({ ...passwordData, [field.key]: e.target.value })}
+                        required
+                        disabled={isLoading}
+                        className={inputClasses}
+                      />
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      required
-                      disabled={isLoading}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      required
-                      disabled={isLoading}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                    />
-                  </div>
-                </div>
+                ))}
 
                 <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Save className="w-4 h-4" />
+                  <Button type="submit" disabled={isLoading} loading={isLoading}>
+                    <Save className="h-4 w-4" />
                     {isLoading ? 'Updating...' : 'Update Password'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    disabled={isLoading}
                     onClick={() => {
                       setIsChangingPassword(false);
                       setPasswordData({
@@ -309,22 +275,19 @@ export default function ProfilePage() {
                         confirmPassword: '',
                       });
                     }}
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </form>
             ) : (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Keep your account secure by using a strong password
               </p>
             )}
-          </div>
+          </Card>
         </div>
       </div>
     </div>
   );
 }
-

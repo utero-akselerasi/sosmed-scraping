@@ -14,20 +14,20 @@ export function ResponsiveTable({ headers, children, mobileCard = true }: Respon
       <>
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/60">
               <tr>
                 {headers.map((header, idx) => (
                   <th
                     key={idx}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
                   >
                     {header}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-border bg-card">
               {children}
             </tbody>
           </table>
@@ -44,20 +44,20 @@ export function ResponsiveTable({ headers, children, mobileCard = true }: Respon
   // Standard table with horizontal scroll on mobile
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted/60">
           <tr>
             {headers.map((header, idx) => (
               <th
                 key={idx}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
               >
                 {header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-border bg-card">
           {children}
         </tbody>
       </table>
@@ -74,7 +74,7 @@ export function MobileCard({ children, onClick }: MobileCardProps) {
   return (
     <div
       onClick={onClick}
-      className="md:hidden bg-white rounded-lg shadow p-4 space-y-3 hover:shadow-md transition-shadow cursor-pointer"
+      className="md:hidden rounded-lg border border-border bg-card p-4 shadow-card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer"
     >
       {children}
     </div>
@@ -90,8 +90,8 @@ interface MobileCardRowProps {
 export function MobileCardRow({ label, value, fullWidth = false }: MobileCardRowProps) {
   return (
     <div className={fullWidth ? 'col-span-2' : ''}>
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <div className="text-sm font-medium text-gray-900">{value}</div>
+      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+      <div className="text-sm font-medium text-card-foreground">{value}</div>
     </div>
   );
 }

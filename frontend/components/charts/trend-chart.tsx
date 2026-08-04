@@ -1,6 +1,8 @@
 ﻿'use client';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTheme } from '@/contexts/theme-context';
+import { getChartTheme, getChartTooltipStyle } from './chart-theme';
 
 interface TrendChartProps {
   data: Array<{
@@ -12,44 +14,44 @@ interface TrendChartProps {
 }
 
 export function TrendChart({ data, title }: TrendChartProps) {
+  const { theme } = useTheme();
+  const chartTheme = getChartTheme(theme);
+
   return (
     <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
+      {title && <h3 className="mb-4 text-lg font-semibold text-card-foreground">{title}</h3>}
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis 
-            dataKey="date" 
-            stroke="#6b7280"
-            style={{ fontSize: '12px' }}
+          <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+          <XAxis
+            dataKey="date"
+            stroke={chartTheme.axis}
+            tick={{ fill: chartTheme.axis, fontSize: 12 }}
           />
-          <YAxis 
-            stroke="#6b7280"
-            style={{ fontSize: '12px' }}
+          <YAxis
+            stroke={chartTheme.axis}
+            tick={{ fill: chartTheme.axis, fontSize: 12 }}
           />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              padding: '8px 12px'
-            }}
+          <Tooltip
+            contentStyle={getChartTooltipStyle(theme)}
+            labelStyle={{ color: chartTheme.label }}
+            itemStyle={{ color: chartTheme.tooltipText }}
           />
-          <Legend />
-          <Line 
-            type="monotone" 
-            dataKey="count" 
-            stroke="#3b82f6" 
+          <Legend wrapperStyle={{ color: chartTheme.axis, fontSize: 12 }} />
+          <Line
+            type="monotone"
+            dataKey="count"
+            stroke="#3b82f6"
             strokeWidth={2}
             dot={{ fill: '#3b82f6', r: 4 }}
             activeDot={{ r: 6 }}
             name="Posts"
           />
           {data[0]?.engagement !== undefined && (
-            <Line 
-              type="monotone" 
-              dataKey="engagement" 
-              stroke="#8b5cf6" 
+            <Line
+              type="monotone"
+              dataKey="engagement"
+              stroke="#8b5cf6"
               strokeWidth={2}
               dot={{ fill: '#8b5cf6', r: 4 }}
               activeDot={{ r: 6 }}

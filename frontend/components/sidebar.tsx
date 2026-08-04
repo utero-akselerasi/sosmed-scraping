@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@/contexts/auth-context';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { LanguageSelector } from '@/components/language-selector';
+import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   FileText,
@@ -16,27 +20,52 @@ import {
   Menu,
   X,
   Settings,
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
+
+const NAV_SECTIONS: Array<{
+  label: string;
+  items: Array<{
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    roles: string[];
+  }>;
+}> = [
+  {
+    label: 'Overview',
+    items: [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'analyst', 'viewer'] },
+      { name: 'Posts', href: '/dashboard/posts', icon: FileText, roles: ['admin', 'analyst', 'viewer'] },
+      { name: 'Influencers', href: '/dashboard/influencers', icon: Users, roles: ['admin', 'analyst', 'viewer'] },
+      { name: 'Platforms', href: '/dashboard/platforms', icon: Globe, roles: ['admin', 'analyst', 'viewer'] },
+      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'analyst', 'viewer'] },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { name: 'Keywords', href: '/dashboard/keywords', icon: Hash, roles: ['admin'] },
+      { name: 'Users', href: '/dashboard/users', icon: UserCircle, roles: ['admin'] },
+      { name: 'Admin', href: '/dashboard/admin', icon: Settings, roles: ['admin'] },
+    ],
+  },
+];
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Administrator',
+  analyst: 'Analyst',
+  viewer: 'Viewer',
+};
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'analyst', 'viewer'] },
-    { name: 'Posts', href: '/dashboard/posts', icon: FileText, roles: ['admin', 'analyst', 'viewer'] },
-    { name: 'Influencers', href: '/dashboard/influencers', icon: Users, roles: ['admin', 'analyst', 'viewer'] },
-    { name: 'Platforms', href: '/dashboard/platforms', icon: Globe, roles: ['admin', 'analyst', 'viewer'] },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'analyst', 'viewer'] },
-    { name: 'Keywords', href: '/dashboard/keywords', icon: Hash, roles: ['admin'] },
-    { name: 'Users', href: '/dashboard/users', icon: UserCircle, roles: ['admin'] },
-    { name: 'Admin', href: '/dashboard/admin', icon: Settings, roles: ['admin'] },
-  ];
-
-  const filteredNavigation = navigation.filter((item) =>
-    item.roles.includes(user?.role || 'viewer')
-  );
+  const role = user?.role || 'viewer';
+  const roleLabel = ROLE_LABELS[role] ?? role;
 
   const handleLogout = () => {
     logout();
@@ -47,91 +76,168 @@ export default function Sidebar() {
     setIsMobileMenuOpen(false);
   };
 
-  return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-lg shadow-lg hover:bg-gray-700 transition-colors"
-      >
-        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
+  const renderNav = () => (
+    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Sidebar navigation">
+      {NAV_SECTIONS.map((section) => {
+        const items = section.items.filter((item) => item.roles.includes(role));
+        if (items.length === 0) return null;
 
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={closeMobileMenu}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-gray-800 text-white transform transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo/Header */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700">
-            <h1 className="text-xl font-bold">Festival Mbois</h1>
-            <button
-              onClick={closeMobileMenu}
-              className="lg:hidden text-gray-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* User Info */}
-          <div className="px-6 py-4 border-b border-gray-700">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.fullName}</p>
-                <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        return (
+          <div key={section.label}>
+            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-muted">
+              {section.label}
+            </p>
             <ul className="space-y-1">
-              {filteredNavigation.map((item) => {
+              {items.map((item) => {
                 const isActive = pathname === item.href;
+                const Icon = item.icon;
                 return (
                   <li key={item.name}>
                     <Link
                       href={item.href}
                       onClick={closeMobileMenu}
-                      className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      aria-current={isActive ? 'page' : undefined}
+                      className={cn(
+                        'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         isActive
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`}
+                          ? 'bg-sidebar-active text-sidebar-active-foreground'
+                          : 'text-sidebar-foreground/80 hover:bg-sidebar-hover hover:text-sidebar-foreground hover:translate-x-0.5'
+                      )}
                     >
-                      <item.icon className="w-5 h-5 mr-3" />
-                      {item.name}
+                      {isActive && (
+                        <motion.span
+                          layoutId="sidebar-active-indicator"
+                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                          className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary"
+                          aria-hidden="true"
+                        />
+                      )}
+                      <Icon
+                        className={cn(
+                          'h-[18px] w-[18px] shrink-0 transition-transform duration-200',
+                          isActive
+                            ? 'text-primary'
+                            : 'text-sidebar-muted group-hover:text-sidebar-foreground group-hover:scale-105'
+                        )}
+                      />
+                      <span>{item.name}</span>
                     </Link>
                   </li>
                 );
               })}
             </ul>
-          </nav>
-
-          {/* Logout Button */}
-          <div className="px-3 py-4 border-t border-gray-700">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
-            >
-              <LogOut className="w-5 h-5 mr-3" />
-              Logout
-            </button>
           </div>
+        );
+      })}
+    </nav>
+  );
+
+  const renderUserCard = () => (
+    <div className="border-b border-sidebar-border px-4 pb-4 pt-2">
+      <div className="group flex items-center gap-3 rounded-xl border border-sidebar-border bg-card/60 p-3 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary to-blue-500 text-white shadow-sm">
+          <span className="text-base font-bold">
+            {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+          </span>
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-sidebar-foreground">
+            {user?.fullName || 'User'}
+          </p>
+          <p className="flex items-center gap-1 text-xs capitalize text-sidebar-muted">
+            <ShieldCheck className="h-3 w-3 text-primary" />
+            {roleLabel}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderLogo = () => (
+    <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-blue-500 shadow-sm shadow-blue-500/30">
+          <Sparkles className="h-4 w-4 text-white" />
+        </div>
+        <div className="leading-tight">
+          <p className="text-sm font-bold tracking-tight text-sidebar-foreground">Festival Mbois</p>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-sidebar-muted">
+            Intelligence Platform
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={closeMobileMenu}
+        aria-label="Close menu"
+        className="rounded-md p-1 text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <X className="h-5 w-5" />
+      </button>
+    </div>
+  );
+
+  const renderFooter = () => (
+    <div className="border-t border-sidebar-border px-3 py-4">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between rounded-lg px-1.5 py-0.5">
+          <ThemeToggle showLabel />
+        </div>
+        <div className="flex items-center justify-between rounded-lg px-1.5 py-0.5">
+          <LanguageSelector showLabel direction="up" />
+        </div>
+      </div>
+      <div className="mt-3 border-t border-sidebar-border pt-3">
+        <button
+          onClick={handleLogout}
+          className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-muted transition-all duration-200 hover:bg-red-50 hover:text-red-600 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <LogOut className="h-[18px] w-[18px] transition-transform duration-200 group-hover:-translate-x-0.5" />
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen((o) => !o)}
+        aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={isMobileMenuOpen}
+        className="fixed left-4 top-4 z-50 rounded-lg border border-border bg-card p-2 text-card-foreground shadow-card transition-colors hover:bg-accent lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+      </button>
+
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+            onClick={closeMobileMenu}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar text-sidebar-foreground shadow-popover lg:static lg:z-auto lg:shadow-none',
+          'transform transition-transform duration-300 ease-in-out',
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
+      >
+        {renderLogo()}
+        {renderUserCard()}
+        {renderNav()}
+        {renderFooter()}
       </div>
     </>
   );

@@ -2,19 +2,20 @@
 
 import { FileDown } from 'lucide-react';
 import { useState } from 'react';
+import { Button, type ButtonVariant } from '@/components/ui/button';
 
 interface PDFExportButtonProps {
   onExport: () => Promise<void>;
   label?: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: ButtonVariant;
   disabled?: boolean;
 }
 
-export function PDFExportButton({ 
-  onExport, 
-  label = 'Export PDF', 
+export function PDFExportButton({
+  onExport,
+  label = 'Export PDF',
   variant = 'outline',
-  disabled = false 
+  disabled = false,
 }: PDFExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -29,22 +30,15 @@ export function PDFExportButton({
     }
   };
 
-  const baseClasses = "inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed";
-  
-  const variantClasses = {
-    primary: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
-    secondary: "bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800",
-    outline: "border-2 border-red-600 text-red-600 hover:bg-red-50 active:bg-red-100",
-  };
-
   return (
-    <button
+    <Button
       onClick={handleExport}
       disabled={disabled || isExporting}
-      className={`${baseClasses} ${variantClasses[variant]}`}
+      variant={variant}
+      loading={isExporting}
     >
-      <FileDown className={`w-4 h-4 mr-2 ${isExporting ? 'animate-bounce' : ''}`} />
+      <FileDown className="h-4 w-4" />
       {isExporting ? 'Generating...' : label}
-    </button>
+    </Button>
   );
 }

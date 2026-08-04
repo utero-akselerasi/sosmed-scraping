@@ -1,22 +1,23 @@
 ﻿'use client';
 
-import { Download } from 'lucide-react';
-import { useState } from 'react';
+import { Download, FileSpreadsheet, FileJson, ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Button, type ButtonVariant } from '@/components/ui/button';
 
 interface ExportButtonProps {
   onExport: () => void;
   label?: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: ButtonVariant;
   icon?: boolean;
   disabled?: boolean;
 }
 
-export function ExportButton({ 
-  onExport, 
-  label = 'Export', 
+export function ExportButton({
+  onExport,
+  label = 'Export',
   variant = 'outline',
   icon = true,
-  disabled = false 
+  disabled = false,
 }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -31,25 +32,16 @@ export function ExportButton({
     }
   };
 
-  const baseClasses = "inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed";
-  
-  const variantClasses = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800",
-    secondary: "bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800",
-    outline: "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100",
-  };
-
   return (
-    <button
+    <Button
       onClick={handleExport}
       disabled={disabled || isExporting}
-      className={`${baseClasses} ${variantClasses[variant]}`}
+      variant={variant}
+      loading={isExporting}
     >
-      {icon && (
-        <Download className={`w-4 h-4 ${label ? 'mr-2' : ''} ${isExporting ? 'animate-bounce' : ''}`} />
-      )}
+      {icon && <Download className="h-4 w-4" />}
       {isExporting ? 'Exporting...' : label}
-    </button>
+    </Button>
   );
 }
 
@@ -62,6 +54,25 @@ interface ExportDropdownProps {
 export function ExportDropdown({ onExportCSV, onExportJSON, disabled = false }: ExportDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen]);
 
   const handleExport = async (exportFn: () => void) => {
     setIsExporting(true);
@@ -76,46 +87,39 @@ export function ExportDropdown({ onExportCSV, onExportJSON, disabled = false }: 
   };
 
   return (
-    <div className="relative inline-block text-left">
-      <button
+    <div className="relative inline-block text-left" ref={containerRef}>
+      <Button
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isExporting}
-        className="inline-flex items-center px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 active:bg-blue-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="outline"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        loading={isExporting}
       >
-        <Download className={`w-4 h-4 mr-2 ${isExporting ? 'animate-bounce' : ''}`} />
+        <Download className="h-4 w-4" />
         {isExporting ? 'Exporting...' : 'Export'}
-        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+        <ChevronDown className="h-4 w-4" />
+      </Button>
 
       {isOpen && !isExporting && (
-        <>
-          <div 
-            className="fixed inset-0 z-10" 
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5">
-            <div className="py-1">
-              <button
-                onClick={() => handleExport(onExportCSV)}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-              >
-                <span className="mr-2">📊</span>
-                Export as CSV
-              </button>
-              {onExportJSON && (
-                <button
-                  onClick={() => handleExport(onExportJSON)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                >
-                  <span className="mr-2">📄</span>
-                  Export as JSON
-                </button>
-              )}
-            </div>
-          </div>
-        </>
+        <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-popover">
+          <button
+            onClick={() => handleExport(onExportCSV)}
+            className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-popover-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-500" />
+            Export as CSV
+          </button>
+          {onExportJSON && (
+            <button
+              onClick={() => handleExport(onExportJSON)}
+              className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-popover-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <FileJson className="mr-2 h-4 w-4 text-primary" />
+              Export as JSON
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

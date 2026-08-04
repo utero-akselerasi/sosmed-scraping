@@ -6,6 +6,7 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
   ],
   theme: {
     container: {
@@ -49,6 +50,23 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          muted: "hsl(var(--sidebar-muted))",
+          border: "hsl(var(--sidebar-border))",
+          hover: "hsl(var(--sidebar-hover))",
+          active: "hsl(var(--sidebar-active))",
+          "active-foreground": "hsl(var(--sidebar-active-foreground))",
+        },
+        chart: {
+          grid: "hsl(var(--chart-grid))",
+          axis: "hsl(var(--chart-axis))",
+          "tooltip-bg": "hsl(var(--chart-tooltip-bg))",
+          "tooltip-border": "hsl(var(--chart-tooltip-border))",
+          label: "hsl(var(--chart-label))",
+          "tooltip-foreground": "hsl(var(--chart-tooltip-foreground))",
         },
       },
       borderRadius: {
