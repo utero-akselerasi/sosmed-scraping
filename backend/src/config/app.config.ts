@@ -1,4 +1,6 @@
-﻿export default () => ({
+﻿import * as path from "path";
+
+export default () => ({
   app: {
     name: process.env.APP_NAME || "Festival Mbois Intelligence Platform",
     port: parseInt(process.env.BACKEND_PORT, 10) || 4000,
@@ -47,6 +49,10 @@
     interval: parseInt(process.env.WORKER_INTERVAL, 10) || 900000,
     batchSize: parseInt(process.env.WORKER_BATCH_SIZE, 10) || 100,
     maxRetries: parseInt(process.env.WORKER_MAX_RETRIES, 10) || 3,
+    dir: process.env.WORKERS_DIR || path.resolve(process.cwd(), "../workers"),
+    pythonCmd: process.env.PYTHON_CMD || "python",
+    staleTimeout:
+      parseInt(process.env.WORKER_STALE_TIMEOUT_MS, 10) || 30 * 60 * 1000,
     instagram: {
       enabled: process.env.INSTAGRAM_ENABLED === "true",
       sessionId: process.env.INSTAGRAM_SESSION_ID,

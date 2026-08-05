@@ -11,6 +11,7 @@ import { PlatformsModule } from "./modules/platforms/platforms.module";
 import { InfluencersModule } from "./modules/influencers/influencers.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { KeywordsModule } from "./modules/keywords/keywords.module";
+import { ScrapingModule } from "./modules/scraping/scraping.module";
 import { UsersModule } from "./modules/users/users.module";
 import {
   User,
@@ -84,6 +85,7 @@ import {
     AnalyticsModule,
     KeywordsModule,
     UsersModule,
+    ScrapingModule,
   ],
   controllers: [],
   providers: [],
