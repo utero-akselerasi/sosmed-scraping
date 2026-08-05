@@ -1,8 +1,9 @@
 ﻿'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { formatNumber, formatCompactNumber, formatPercentage } from '@/lib/format';
+import toast from 'react-hot-toast';
+import { formatNumber, formatCompactNumber, formatPercentage, formatDateTime } from '@/lib/format';
 import {
   TrendingUp,
   Users,
@@ -11,7 +12,9 @@ import {
   ThumbsUp,
   MessageCircle,
   Share2,
-  Eye
+  Eye,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { TrendChart } from '@/components/charts/trend-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
@@ -30,11 +33,13 @@ const STAT_ICON_COLORS = {
 } as const;
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+
   // Auto-refresh hook
   const autoRefresh = useAutoRefresh({
     interval: 30,
     enabled: false,
-    queryKeys: ['dashboard-overview', 'platforms', 'trends'],
+    queryKeys: ['dashboard-overview', 'platforms', 'trends', 'scraping-status'],
   });
 
   const { data: overview, isLoading } = useQuery({
@@ -55,6 +60,28 @@ export default function DashboardPage() {
   const { data: postStats } = useQuery({
     queryKey: ['posts-stats'],
     queryFn: () => apiClient.getPostsStats(),
+  });
+
+  const { data: scrapingStatus, isLoading: isLoadingScraping } = useQuery({
+    queryKey: ['scraping-status'],
+    queryFn: () => apiClient.getScrapingStatus(),
+    refetchInterval: 15000,
+  });
+
+  const scrapeMutation = useMutation({
+    mutationFn: () => apiClient.triggerScraping(),
+    onSuccess: (data) => {
+      toast.success(data?.message || 'Scraping dimulai.');
+      queryClient.invalidateQueries({ queryKey: ['scraping-status'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-overview'] });
+    },
+    onError: (error: any) => {
+      if (error?.response?.status === 409) {
+        toast.error('Masih ada proses scraping yang sedang berjalan.');
+      } else {
+        toast.error(error?.response?.data?.message || 'Gagal memulai scraping.');
+      }
+    },
   });
 
   const handleExport = () => {
@@ -170,6 +197,18 @@ export default function DashboardPage() {
         title="Dashboard Overview"
         description="Social media analytics for Festival Mbois"
       >
+        <button
+          onClick={() => scrapeMutation.mutate()}
+          disabled={scrapeMutation.isPending}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {scrapeMutation.isPending ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
+          Scrape Sekarang
+        </button>
         <AutoRefreshToggle
           isEnabled={autoRefresh.isEnabled}
           countdown={autoRefresh.countdown}
@@ -203,6 +242,79 @@ export default function DashboardPage() {
             </Card>
           );
         })}
+      </div>
+
+      {/* Scraping Status */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Scraping Status</h2>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              scrapingStatus?.busy
+                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300'
+                : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+            }`}
+          >
+            {scrapingStatus?.busy ? 'Scraping Berjalan' : 'Idle'}
+          </span>
+        </div>
+
+        {isLoadingScraping ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Memuat status...</p>
+        ) : !scrapingStatus?.jobs?.length ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Belum ada data scraping. Klik "Scrape Sekarang" untuk memulai.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {scrapingStatus.jobs.map((job: any) => (
+              <div
+                key={job.id}
+                className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                    {job.platformName || job.platformType}
+                  </p>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                      job.status === 'completed'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                        : job.status === 'failed'
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'
+                        : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300'
+                    }`}
+                  >
+                    {job.status}
+                  </span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <p>
+                    <span className="font-medium text-gray-500 dark:text-gray-400">Last Run: </span>
+                    {job.startedAt ? formatDateTime(job.startedAt) : '-'}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-500 dark:text-gray-400">Durasi: </span>
+                    {job.durationSeconds !== null ? `${job.durationSeconds} detik` : '-'}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-500 dark:text-gray-400">Post Collected: </span>
+                    {formatNumber(job.postsCollected)}
+                  </p>
+                  <p>
+                    <span className="font-medium text-gray-500 dark:text-gray-400">Error: </span>
+                    {formatNumber(job.errorsCount)}
+                  </p>
+                </div>
+                {job.status === 'failed' && job.errorMessage && (
+                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                    {job.errorMessage}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Charts Row */}

@@ -164,6 +164,17 @@ class ApiClient {
     return response.data;
   }
 
+  // Scraping endpoints
+  async triggerScraping() {
+    const response = await this.client.post('/scraping/run');
+    return response.data;
+  }
+
+  async getScrapingStatus() {
+    const response = await this.client.get('/scraping/status');
+    return response.data;
+  }
+
   // Keywords endpoints
   async getKeywords(params?: any) {
     const response = await this.client.get('/keywords', { params });
