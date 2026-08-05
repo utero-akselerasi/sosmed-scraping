@@ -113,7 +113,12 @@ class DatabaseManager:
                 )
                 return row['id'] if row else None
             except Exception as e:
-                logger.error(f"Failed to insert post: {e}")
+                logger.error(
+                    f"Failed to insert post: {e} "
+                    f"(platform_post_id={data.get('platform_post_id')}, "
+                    f"post_url={data.get('post_url')}, "
+                    f"posted_at={data.get('posted_at')})"
+                )
                 return None
     
     async def update_hashtag_usage(self, hashtag: str):
