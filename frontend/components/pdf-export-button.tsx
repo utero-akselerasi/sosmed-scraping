@@ -3,6 +3,7 @@
 import { FileDown } from 'lucide-react';
 import { useState } from 'react';
 import { Button, type ButtonVariant } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n';
 
 interface PDFExportButtonProps {
   onExport: () => Promise<void>;
@@ -13,10 +14,11 @@ interface PDFExportButtonProps {
 
 export function PDFExportButton({
   onExport,
-  label = 'Export PDF',
+  label,
   variant = 'outline',
   disabled = false,
 }: PDFExportButtonProps) {
+  const { t } = useI18n();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -38,7 +40,7 @@ export function PDFExportButton({
       loading={isExporting}
     >
       <FileDown className="h-4 w-4" />
-      {isExporting ? 'Generating...' : label}
+      {isExporting ? t('common.generating') : (label ?? t('common.exportPdf'))}
     </Button>
   );
 }

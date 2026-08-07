@@ -54,6 +54,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from shared.database import DatabaseManager
 from shared.sentiment import sentiment_analyzer
+from shared.worker_lock import WorkerLock
 
 # Daftar default RSS feed situs berita Indonesia (nasional + Jatim + Malang)
 DEFAULT_RSS_FEEDS = [
@@ -80,23 +81,8 @@ BING_NEWS_RSS_URL = "https://www.bing.com/news/search"
 # Malang yang jauh lebih luas daripada Bing News RSS)
 GOOGLE_NEWS_RSS_URL = "https://news.google.com/rss/search"
 
-# Query kanonik event Festival Mbois - di luar keyword DB, dipakai untuk
-# memperluas hasil pencarian Bing/Google News. Hasil tetap harus lolos
-# verifikasi keyword aktif di judul/konten (precision tidak dilonggarkan).
-EXTRA_SEARCH_QUERIES = [
-    'festival mbois malang',
-    'festival mbois 2026',
-    'festival mbois 11',
-    'festival mbois xi',
-    'festival mbois ke-11',
-    'festival mbois stadion gajayana',
-    'mbois malang',
-    'mbois 11',
-    'mbois xi',
-    'mbois 2026',
-    'gajayana festival mbois',
-    'malang menyala',
-]
+# All search queries now come from the database keywords table.
+# No hardcoded queries - the Keywords page is the single source of truth.
 
 # Error jaringan yang bersifat SEMENTARA - layak di-retry dengan backoff:
 # DNS/getaddrinfo, timeout, connection reset/aborted, payload terputus,
@@ -527,7 +513,7 @@ class WebsiteScraper:
         """Bangun daftar query pencarian unik.
 
         Kombinasi: keyword DB yang ternormalisasi (hanya yang berbentuk
-        frasa) + query kanonik event. Query tanpa spasi dan hashtag murni
+        frasa) dari database keywords. Query tanpa spasi dan hashtag murni
         tidak dipakai sebagai query (mengembalikan 0 hasil di mesin
         pencarian), tapi tetap aktif untuk matching relevansi.
         """
@@ -536,9 +522,6 @@ class WebsiteScraper:
             norm = self._normalize_keyword(keyword)
             if ' ' in norm and norm not in queries:
                 queries.append(norm)
-        for query in EXTRA_SEARCH_QUERIES:
-            if query not in queries:
-                queries.append(query)
         return queries
 
     # ------------------------------------------------------------------
@@ -1396,12 +1379,24 @@ class WebsiteScraper:
         logger.info("Starting Website scraper run...")
         logger.info("=" * 60)
 
-        job_id = await self.db.create_scraping_job(self.platform_id)
+        # Cross-process lock: cegah dua instance website scraper berjalan
+        # bersamaan (manual Terminal + run_all.py + backend trigger).
+        lock = WorkerLock('website')
+        if not await lock.acquire(self.db):
+            logger.warning(
+                "Website scraper dilewati: instance lain sudah berjalan "
+                "(lock aktif). Jalankan setelah proses sebelumnya selesai."
+            )
+            return
+
+        job_id = None
         articles_collected = 0
         duplicates = 0
         errors = 0
 
         try:
+            job_id = await self.db.create_scraping_job(self.platform_id)
+
             # Load semua kandidat (feed situs + Bing News + Google News)
             candidates = await self._load_all_candidates()
 
@@ -1442,9 +1437,10 @@ class WebsiteScraper:
                     # Rate limiting antar keyword
                     await asyncio.sleep(2)
 
-            await self.db.update_scraping_job(
-                job_id, 'completed', articles_collected, errors
-            )
+            if job_id:
+                await self.db.update_scraping_job(
+                    job_id, 'completed', articles_collected, errors
+                )
 
             logger.info("=" * 60)
             logger.info(
@@ -1458,9 +1454,12 @@ class WebsiteScraper:
 
         except Exception as e:
             logger.error(f"Website scraper failed: {e}")
-            await self.db.update_scraping_job(
-                job_id, 'failed', articles_collected, errors, str(e)
-            )
+            if job_id:
+                await self.db.update_scraping_job(
+                    job_id, 'failed', articles_collected, errors, str(e)
+                )
+        finally:
+            await lock.release()
 
 
 async def main():

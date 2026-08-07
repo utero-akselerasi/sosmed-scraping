@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTheme } from '@/contexts/theme-context';
 import { getChartTheme, getChartTooltipStyle } from './chart-theme';
+import { useI18n } from '@/lib/i18n';
 
 interface SentimentBarChartProps {
   data: Array<{
@@ -16,6 +17,7 @@ interface SentimentBarChartProps {
 
 export function SentimentBarChart({ data, title }: SentimentBarChartProps) {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const chartTheme = getChartTheme(theme);
 
   return (
@@ -42,19 +44,19 @@ export function SentimentBarChart({ data, title }: SentimentBarChartProps) {
           <Bar
             dataKey="positive"
             fill="#10b981"
-            name="Positive"
+            name={t('charts.positive')}
             radius={[4, 4, 0, 0]}
           />
           <Bar
             dataKey="neutral"
             fill="#94a3b8"
-            name="Neutral"
+            name={t('charts.neutral')}
             radius={[4, 4, 0, 0]}
           />
           <Bar
             dataKey="negative"
             fill="#ef4444"
-            name="Negative"
+            name={t('charts.negative')}
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

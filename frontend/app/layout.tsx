@@ -28,6 +28,11 @@ export default function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})();`,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var l=localStorage.getItem('language');if(l==='id'||l==='en'){document.documentElement.lang=l}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <Providers>

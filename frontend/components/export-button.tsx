@@ -3,6 +3,7 @@
 import { Download, FileSpreadsheet, FileJson, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button, type ButtonVariant } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n';
 
 interface ExportButtonProps {
   onExport: () => void;
@@ -14,11 +15,12 @@ interface ExportButtonProps {
 
 export function ExportButton({
   onExport,
-  label = 'Export',
+  label,
   variant = 'outline',
   icon = true,
   disabled = false,
 }: ExportButtonProps) {
+  const { t } = useI18n();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -40,7 +42,7 @@ export function ExportButton({
       loading={isExporting}
     >
       {icon && <Download className="h-4 w-4" />}
-      {isExporting ? 'Exporting...' : label}
+      {isExporting ? t('common.exporting') : (label ?? t('common.export'))}
     </Button>
   );
 }
@@ -52,6 +54,7 @@ interface ExportDropdownProps {
 }
 
 export function ExportDropdown({ onExportCSV, onExportJSON, disabled = false }: ExportDropdownProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +100,7 @@ export function ExportDropdown({ onExportCSV, onExportJSON, disabled = false }: 
         loading={isExporting}
       >
         <Download className="h-4 w-4" />
-        {isExporting ? 'Exporting...' : 'Export'}
+        {isExporting ? t('common.exporting') : t('common.export')}
         <ChevronDown className="h-4 w-4" />
       </Button>
 
@@ -108,7 +111,7 @@ export function ExportDropdown({ onExportCSV, onExportJSON, disabled = false }: 
             className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-popover-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-500" />
-            Export as CSV
+            {t('common.exportAsCsv')}
           </button>
           {onExportJSON && (
             <button
@@ -116,7 +119,7 @@ export function ExportDropdown({ onExportCSV, onExportJSON, disabled = false }: 
               className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-popover-foreground transition-colors duration-150 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <FileJson className="mr-2 h-4 w-4 text-primary" />
-              Export as JSON
+              {t('common.exportAsJson')}
             </button>
           )}
         </div>

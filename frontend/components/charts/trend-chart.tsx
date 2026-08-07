@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTheme } from '@/contexts/theme-context';
 import { getChartTheme, getChartTooltipStyle } from './chart-theme';
+import { useI18n } from '@/lib/i18n';
 
 interface TrendChartProps {
   data: Array<{
@@ -15,6 +16,7 @@ interface TrendChartProps {
 
 export function TrendChart({ data, title }: TrendChartProps) {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const chartTheme = getChartTheme(theme);
 
   return (
@@ -45,7 +47,7 @@ export function TrendChart({ data, title }: TrendChartProps) {
             strokeWidth={2}
             dot={{ fill: '#3b82f6', r: 4 }}
             activeDot={{ r: 6 }}
-            name="Posts"
+            name={t('charts.posts')}
           />
           {data[0]?.engagement !== undefined && (
             <Line
@@ -55,7 +57,7 @@ export function TrendChart({ data, title }: TrendChartProps) {
               strokeWidth={2}
               dot={{ fill: '#8b5cf6', r: 4 }}
               activeDot={{ r: 6 }}
-              name="Engagement"
+              name={t('charts.engagement')}
             />
           )}
         </LineChart>

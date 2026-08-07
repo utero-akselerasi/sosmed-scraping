@@ -12,6 +12,7 @@ import {
   ScrapingJob,
   CollectionStatus,
 } from "../../common/entities/scraping-job.entity";
+import { Post } from "../../common/entities/post.entity";
 
 export type TriggerResult = "started" | "busy";
 
@@ -25,6 +26,8 @@ export class ScrapingService implements OnModuleInit {
   constructor(
     @InjectRepository(ScrapingJob)
     private readonly jobsRepo: Repository<ScrapingJob>,
+    @InjectRepository(Post)
+    private readonly postsRepo: Repository<Post>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -167,17 +170,27 @@ export class ScrapingService implements OnModuleInit {
   }
 
   /**
-   * Status scraping untuk dashboard. Sumber data: tabel scraping_jobs
-   * (job terbaru per platform).
+   * Status scraping untuk dashboard. Sumber data:
+   * - Status/Job metrics (postsCollected, errors, duration) dari tabel
+   *   scraping_jobs (job terbaru per platform).
+   * - postsInDatabase: jumlah POST ASLI yang tersimpan di tabel posts per
+   *   platform. Ini adalah nilai "Posts Collected" yang konsisten dengan
+   *   halaman Posts dan Dashboard Overview.
    */
   async getStatus() {
-    const [busy, jobs] = await Promise.all([
+    const [busy, jobs, postsByPlatform] = await Promise.all([
       this.isBusy(),
       this.jobsRepo.find({
         order: { createdAt: "DESC" },
         relations: ["platform"],
         take: 200,
       }),
+      this.postsRepo
+        .createQueryBuilder("post")
+        .select("post.platformId", "platformId")
+        .addSelect("COUNT(*)", "count")
+        .groupBy("post.platformId")
+        .getRawMany<{ platformId: string; count: string }>(),
     ]);
 
     const latestByPlatform = new Map<string, ScrapingJob>();
@@ -186,6 +199,10 @@ export class ScrapingService implements OnModuleInit {
         latestByPlatform.set(job.platformId, job);
       }
     }
+
+    const postsInDatabase = new Map<string, number>(
+      postsByPlatform.map((row) => [row.platformId, parseInt(row.count) || 0]),
+    );
 
     return {
       busy,
@@ -206,6 +223,7 @@ export class ScrapingService implements OnModuleInit {
                 ),
               )
             : null,
+        postsInDatabase: postsInDatabase.get(job.platformId) ?? 0,
         postsCollected: job.postsCollected,
         errorsCount: job.errorsCount,
         errorMessage: job.errorMessage,

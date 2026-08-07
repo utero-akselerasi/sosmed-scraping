@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { useI18n } from '@/lib/i18n';
 import { formatNumber, formatCompactNumber } from '@/lib/format';
 import { Search, TrendingUp, Users, Award, Eye, BadgeCheck } from 'lucide-react';
 import { Influencer } from '@/types';
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function InfluencersPage() {
+  const { t } = useI18n();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [platformId, setPlatformId] = useState<string>('');
@@ -63,8 +65,8 @@ export default function InfluencersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Influencers"
-        description="Top performing influencers and content creators"
+        title={t('influencers.title')}
+        description={t('influencers.description')}
       >
         <ExportDropdown
           onExportCSV={handleExportCSV}
@@ -78,7 +80,7 @@ export default function InfluencersPage() {
         <div className="rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white shadow-card-hover">
           <div className="mb-4 flex items-center gap-3">
             <Award className="h-6 w-6" />
-            <h2 className="text-xl font-bold">Top 5 Influencers</h2>
+            <h2 className="text-xl font-bold">{t('influencers.top5')}</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
             {topInfluencers.map((influencer: Influencer, index: number) => (
@@ -100,11 +102,11 @@ export default function InfluencersPage() {
                   <p className="mb-2 text-xs opacity-90">@{influencer.username}</p>
                   <div className="w-full space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="opacity-80">Followers</span>
+                      <span className="opacity-80">{t('common.followers')}</span>
                       <span className="font-semibold">{formatCompactNumber(influencer.followersCount)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="opacity-80">Engagement</span>
+                      <span className="opacity-80">{t('common.engagement')}</span>
                       <span className="font-semibold">{influencer.engagementRate?.toFixed(1)}%</span>
                     </div>
                   </div>
@@ -123,7 +125,7 @@ export default function InfluencersPage() {
               <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search influencers..."
+                placeholder={t('influencers.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-lg border border-input bg-card py-2 pl-10 pr-4 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
@@ -139,9 +141,9 @@ export default function InfluencersPage() {
                 setPage(1);
               }}
               className={selectClasses}
-              aria-label="Filter by platform"
+              aria-label={t('common.filterByPlatform')}
             >
-              <option value="">All Platforms</option>
+              <option value="">{t('common.allPlatforms')}</option>
               {platforms?.map((platform: any) => (
                 <option key={platform.id} value={platform.id}>
                   {platform.name}
@@ -158,11 +160,11 @@ export default function InfluencersPage() {
                 setPage(1);
               }}
               className={selectClasses}
-              aria-label="Sort influencers"
+              aria-label={t('influencers.sortAria')}
             >
-              <option value="engagementRate">Engagement Rate</option>
-              <option value="followersCount">Followers</option>
-              <option value="postsCount">Posts Count</option>
+              <option value="engagementRate">{t('influencers.engagementRate')}</option>
+              <option value="followersCount">{t('common.followers')}</option>
+              <option value="postsCount">{t('influencers.postsCount')}</option>
             </select>
           </div>
         </form>
@@ -173,7 +175,7 @@ export default function InfluencersPage() {
         <div className="flex h-64 items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
-            <p className="mt-4 text-sm text-muted-foreground">Loading influencers...</p>
+            <p className="mt-4 text-sm text-muted-foreground">{t('influencers.loading')}</p>
           </div>
         </div>
       ) : influencersData?.data && influencersData.data.length > 0 ? (
@@ -196,7 +198,7 @@ export default function InfluencersPage() {
                     </div>
                   </div>
                   {influencer.isVerified && (
-                    <BadgeCheck className="h-5 w-5 text-primary" aria-label="Verified" />
+                    <BadgeCheck className="h-5 w-5 text-primary" aria-label={t('common.verified')} />
                   )}
                 </div>
 
@@ -209,14 +211,14 @@ export default function InfluencersPage() {
                 <div className="mb-4 grid grid-cols-2 gap-4">
                   <div className="rounded-xl bg-primary/5 p-3 text-center">
                     <Users className="mx-auto mb-1 h-5 w-5 text-primary" />
-                    <p className="text-xs text-muted-foreground">Followers</p>
+                    <p className="text-xs text-muted-foreground">{t('common.followers')}</p>
                     <p className="text-lg font-bold text-card-foreground">
                       {formatCompactNumber(influencer.followersCount)}
                     </p>
                   </div>
                   <div className="rounded-xl bg-emerald-500/5 p-3 text-center">
                     <TrendingUp className="mx-auto mb-1 h-5 w-5 text-emerald-500" />
-                    <p className="text-xs text-muted-foreground">Engagement</p>
+                    <p className="text-xs text-muted-foreground">{t('common.engagement')}</p>
                     <p className="text-lg font-bold text-card-foreground">
                       {influencer.engagementRate?.toFixed(1)}%
                     </p>
@@ -225,19 +227,19 @@ export default function InfluencersPage() {
 
                 <div className="grid grid-cols-3 gap-2 border-t border-border pt-4">
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Posts</p>
+                    <p className="text-xs text-muted-foreground">{t('sidebar.posts')}</p>
                     <p className="text-sm font-bold text-card-foreground">
                       {formatNumber(influencer.postsCount)}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Followers</p>
+                    <p className="text-xs text-muted-foreground">{t('common.followers')}</p>
                     <p className="text-sm font-bold text-card-foreground">
                       {formatCompactNumber(influencer.followersCount)}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Engagement</p>
+                    <p className="text-xs text-muted-foreground">{t('common.engagement')}</p>
                     <p className="text-sm font-bold text-card-foreground">
                       {influencer.engagementRate.toFixed(1)}%
                     </p>
@@ -246,7 +248,7 @@ export default function InfluencersPage() {
 
                 <div className="mt-4 flex items-center justify-center gap-1 text-sm text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <Eye className="h-4 w-4" />
-                  View Details
+                  {t('influencers.detailTitle')}
                 </div>
               </Link>
             ))}
@@ -256,8 +258,11 @@ export default function InfluencersPage() {
           {influencersData.meta && (
             <Card className="flex items-center justify-between p-4">
               <div className="text-sm text-muted-foreground">
-                Showing {((page - 1) * 20) + 1} to {Math.min(page * 20, influencersData.meta.total)} of{' '}
-                {influencersData.meta.total} results
+                {t('influencers.showingOf', {
+                  start: ((page - 1) * 20) + 1,
+                  end: Math.min(page * 20, influencersData.meta.total),
+                  total: influencersData.meta.total,
+                })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -266,14 +271,14 @@ export default function InfluencersPage() {
                   variant="outline"
                   size="sm"
                 >
-                  Previous
+                  {t('common.previous')}
                 </Button>
                 <Button
                   onClick={() => setPage(page + 1)}
                   disabled={page >= influencersData.meta.totalPages}
                   size="sm"
                 >
-                  Next
+                  {t('common.next')}
                 </Button>
               </div>
             </Card>
@@ -282,7 +287,7 @@ export default function InfluencersPage() {
       ) : (
         <Card className="p-12 text-center">
           <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
-          <p className="text-muted-foreground">No influencers found</p>
+          <p className="text-muted-foreground">{t('influencers.noInfluencers')}</p>
         </Card>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
+import { useI18n } from '@/lib/i18n';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion';
 import {
@@ -48,27 +49,27 @@ const itemVariants: Variants = {
 const features = [
   {
     icon: TrendingUp,
-    title: 'Live engagement tracking',
-    desc: 'Likes, comments, shares and views updated in real time.',
+    titleKey: 'auth.featureEngagement',
+    descKey: 'auth.featureEngagementDesc',
   },
   {
     icon: Activity,
-    title: 'AI sentiment analysis',
-    desc: 'Every post auto-classified positive, neutral or negative.',
+    titleKey: 'auth.featureSentiment',
+    descKey: 'auth.featureSentimentDesc',
   },
   {
     icon: Globe,
-    title: 'Multi-platform coverage',
-    desc: 'Instagram, TikTok, Threads and more in a single view.',
+    titleKey: 'auth.featureMultiPlatform',
+    descKey: 'auth.featureMultiPlatformDesc',
   },
   {
     icon: Radio,
-    title: 'Always-on scraping',
-    desc: 'Workers ingest new content around the clock, in the background.',
+    titleKey: 'auth.featureWorkers',
+    descKey: 'auth.featureWorkersDesc',
   },
 ];
 
-const statusServices = ['Auth API', 'Scraping Workers', 'Analytics Engine'];
+const statusServiceKeys = ['auth.serviceAuthApi', 'auth.serviceWorkers', 'auth.serviceAnalytics'];
 
 function Logo({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const box = size === 'sm' ? 'h-9 w-9' : 'h-11 w-11';
@@ -87,6 +88,7 @@ function Logo({ size = 'md' }: { size?: 'sm' | 'md' }) {
 export default function LoginPage() {
   const { login } = useAuth();
   const { theme } = useTheme();
+  const { t } = useI18n();
   const reducedMotion = useReducedMotion();
 
   const [email, setEmail] = useState('');
@@ -140,14 +142,14 @@ export default function LoginPage() {
       const next: FieldErrors = {};
       const trimmed = email.trim();
       if (!trimmed) {
-        next.email = 'Email is required';
+        next.email = t('auth.emailRequired');
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-        next.email = 'Enter a valid email address';
+        next.email = t('auth.emailInvalid');
       }
       if (!password) {
-        next.password = 'Password is required';
+        next.password = t('auth.passwordRequired');
       } else if (password.length < 6) {
-        next.password = 'Password must be at least 6 characters';
+        next.password = t('auth.passwordTooShort');
       }
       const hasErrors = Object.keys(next).length > 0;
       return {
@@ -156,7 +158,7 @@ export default function LoginPage() {
         focusField: next.email ? 'email' : next.password ? 'password' : undefined,
       };
     },
-    [email, password]
+    [email, password, t]
   );
 
   const handleDemoFill = () => {
@@ -164,7 +166,7 @@ export default function LoginPage() {
     setPassword(DEMO_PASSWORD);
     setErrors({});
     setAuthError(null);
-    toast.success('Demo credentials filled - press Login to continue');
+    toast.success(t('auth.demoFilled'));
     passwordRef.current?.focus();
   };
 
@@ -183,16 +185,16 @@ export default function LoginPage() {
       document.body.removeChild(el);
     }
     setCopied(true);
-    toast.success('Demo credentials copied to clipboard');
+    toast.success(t('auth.demoCopied'));
     window.setTimeout(() => setCopied(false), 2000);
   };
 
   const handleForgotPassword = () => {
-    toast('Password reset is managed by your administrator. Contact them for help.');
+    toast(t('auth.forgotPasswordInfo'));
   };
 
   const handleRegisterInfo = () => {
-    toast('Registration is admin-managed. Contact your administrator to create an account.');
+    toast(t('auth.registerInfo'));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -224,12 +226,12 @@ export default function LoginPage() {
 
     try {
       await login(email.trim(), password);
-      toast.success('Login successful!');
+      toast.success(t('auth.loginSuccessful'));
     } catch (err) {
       const message =
         err instanceof Error && err.message
           ? err.message
-          : 'Login failed. Please try again.';
+          : t('auth.loginFailed');
       setAuthError(message);
       setShakeKey((k) => k + 1);
     } finally {
@@ -270,14 +272,14 @@ export default function LoginPage() {
           <div className="flex items-center gap-3 sm:hidden">
             <Logo size="sm" />
             <div>
-              <p className="text-base font-semibold tracking-tight text-card-foreground">Festival Mbois</p>
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Intelligence Platform</p>
+              <p className="text-base font-semibold tracking-tight text-card-foreground">{t('brand.name')}</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{t('brand.tagline')}</p>
             </div>
           </div>
 
           <div className="mt-4 sm:mt-0">
-            <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">Welcome back</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Sign in to your intelligence workspace</p>
+            <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">{t('auth.welcomeBack')}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t('auth.signInSubtitle')}</p>
           </div>
 
           <AnimatePresence>
@@ -302,7 +304,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
             <div>
               <label htmlFor="email" className="mb-2 block text-sm font-medium text-card-foreground">
-                Email address
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -340,7 +342,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="mb-2 block text-sm font-medium text-card-foreground">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -363,12 +365,12 @@ export default function LoginPage() {
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'password-error' : undefined}
                   className={cn(inputClasses, errors.password ? errorInputClasses : 'border-border', 'pr-11')}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.passwordPlaceholder')}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -397,14 +399,14 @@ export default function LoginPage() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="h-4 w-4 rounded border-border bg-card accent-primary"
                 />
-                Remember me
+                {t('auth.rememberMe')}
               </label>
               <button
                 type="button"
                 onClick={handleForgotPassword}
                 className="text-sm font-medium text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                Forgot password?
+                {t('auth.forgotPassword')}
               </button>
             </div>
 
@@ -418,11 +420,11 @@ export default function LoginPage() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Signing in...
+                  {t('auth.signingIn')}
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  Sign in
+                  {t('auth.signIn')}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </span>
               )}
@@ -431,7 +433,7 @@ export default function LoginPage() {
 
           <div className="mt-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Demo access</span>
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">{t('auth.demoAccess')}</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
@@ -439,10 +441,10 @@ export default function LoginPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-primary">
                 <KeyRound className="h-4 w-4" />
-                Explorer account
+                {t('auth.explorerAccount')}
               </div>
               <span className="rounded-md border border-border bg-card px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                One-click fill
+                {t('auth.oneClickFill')}
               </span>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-2 font-mono text-xs text-muted-foreground">
@@ -460,21 +462,21 @@ export default function LoginPage() {
                 whileTap={{ scale: 0.98 }}
                 className="flex-1 rounded-lg border border-primary/30 bg-primary/10 py-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                Use Demo Credentials
+                {t('auth.useDemoCredentials')}
               </motion.button>
               <motion.button
                 type="button"
                 onClick={handleCopyCredentials}
                 whileTap={{ scale: 0.98 }}
-                aria-label="Copy demo credentials"
+                aria-label={t('auth.copyCredentialsAria')}
                 className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card/60 px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('auth.copied') : t('auth.copy')}
               </motion.button>
             </div>
             <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-              Fills the form so you can explore instantly. Login is not submitted automatically.
+              {t('auth.demoHint')}
             </p>
           </div>
 
@@ -486,20 +488,20 @@ export default function LoginPage() {
               className="flex w-full items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <UserPlus className="h-4 w-4" />
-              Register
+              {t('auth.register')}
               <span className="rounded-md border border-border bg-card px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                Admin only
+                {t('auth.adminOnly')}
               </span>
             </button>
             <p id="register-hint" className="mt-1.5 text-center text-[11px] text-muted-foreground">
-              New accounts are created by administrators. Contact your admin to request access.
+              {t('auth.registerHint')}
             </p>
           </div>
         </div>
       </div>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        &copy; 2026 Festival Mbois Intelligence Platform &middot; Created by Kharisman (maskhar.com)
+        {t('brand.legal')}
       </p>
     </motion.div>
   ) : (
@@ -577,34 +579,33 @@ export default function LoginPage() {
           <motion.div variants={itemVariants} className="flex items-center gap-3">
             <Logo />
             <div>
-              <p className="text-lg font-semibold tracking-tight text-card-foreground">Festival Mbois</p>
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Intelligence Platform</p>
+              <p className="text-lg font-semibold tracking-tight text-card-foreground">{t('brand.name')}</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{t('brand.tagline')}</p>
             </div>
           </motion.div>
 
           <motion.div variants={itemVariants}>
             <h1 className="text-4xl font-bold leading-tight tracking-tight xl:text-5xl">
-              Social intelligence,
+              {t('auth.heroHeadline1')}
               <br />
               <span className="bg-gradient-to-r from-primary via-sky-400 to-primary bg-clip-text text-transparent">
-                live and beautiful.
+                {t('auth.heroHeadline2')}
               </span>
             </h1>
             <p className="mt-5 max-w-lg leading-relaxed text-muted-foreground">
-              Monitor posts, influencers, platforms and sentiment across the social web - powered by
-              automated scraping workers running around the clock.
+              {t('auth.heroDescription')}
             </p>
           </motion.div>
 
           <motion.div variants={itemVariants} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {features.map((f) => (
               <div
-                key={f.title}
+                key={f.titleKey}
                 className="rounded-xl border border-border bg-card/60 p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
               >
                 <f.icon className="h-5 w-5 text-primary" />
-                <p className="mt-2.5 text-sm font-semibold text-card-foreground">{f.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{f.desc}</p>
+                <p className="mt-2.5 text-sm font-semibold text-card-foreground">{t(f.titleKey)}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t(f.descKey)}</p>
               </div>
             ))}
           </motion.div>
@@ -618,17 +619,17 @@ export default function LoginPage() {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-primary/60 animate-pulse-ring" />
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
               </span>
-              <span className="text-sm font-medium text-card-foreground">All systems operational</span>
-              <span className="ml-auto text-xs text-muted-foreground">v1.0.0</span>
+              <span className="text-sm font-medium text-card-foreground">{t('auth.allSystemsOperational')}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{t('brand.version')}</span>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {statusServices.map((s) => (
+              {statusServiceKeys.map((s) => (
                 <span
                   key={s}
                   className="flex items-center gap-1.5 rounded-md border border-border bg-card/60 px-2 py-1 text-[11px] text-muted-foreground"
                 >
                   <ShieldCheck className="h-3 w-3 text-primary" />
-                  {s}
+                  {t(s)}
                 </span>
               ))}
             </div>

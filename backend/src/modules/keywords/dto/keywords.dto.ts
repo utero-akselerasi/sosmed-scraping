@@ -85,6 +85,11 @@ export class GetKeywordsQueryDto {
   @Type(() => Boolean)
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: "Search keywords" })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
 
 export class PaginatedKeywordsResponseDto {

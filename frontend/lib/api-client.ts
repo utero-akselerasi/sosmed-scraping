@@ -196,6 +196,11 @@ class ApiClient {
     return response.data;
   }
 
+  async toggleKeyword(id: string) {
+    const response = await this.client.patch(`/keywords/${id}/toggle`);
+    return response.data;
+  }
+
   // Users endpoints
   async getUsers(params?: any) {
     const response = await this.client.get('/users', { params });

@@ -2,6 +2,7 @@
 
 import Sidebar from '@/components/sidebar';
 import { useAuth } from '@/contexts/auth-context';
+import { useI18n } from '@/lib/i18n';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -12,6 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isLoading } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
@@ -27,7 +29,7 @@ export default function DashboardLayout({
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading platform...</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t('layout.loadingPlatform')}</p>
         </div>
       </div>
     );

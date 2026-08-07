@@ -26,9 +26,22 @@ export class KeywordsService {
   ): Promise<KeywordResponseDto> {
     const { keyword, priority } = createKeywordDto;
 
-    // Check if keyword already exists
+    // Trim whitespace
+    const trimmedKeyword = keyword.trim();
+
+    // Validate: prevent empty or whitespace-only keywords
+    if (!trimmedKeyword) {
+      throw new ConflictException("Keyword cannot be empty or whitespace only");
+    }
+
+    // Validate: prevent extremely long keywords
+    if (trimmedKeyword.length > 255) {
+      throw new ConflictException("Keyword is too long (max 255 characters)");
+    }
+
+    // Check if keyword already exists (case-insensitive)
     const existing = await this.keywordsRepository.findOne({
-      where: { keyword: keyword.toLowerCase() },
+      where: { keyword: trimmedKeyword.toLowerCase() },
     });
 
     if (existing) {
@@ -37,7 +50,7 @@ export class KeywordsService {
 
     // Create new keyword
     const newKeyword = this.keywordsRepository.create({
-      keyword: keyword.toLowerCase(),
+      keyword: trimmedKeyword.toLowerCase(),
       priority: priority || 1,
       isActive: true,
     });
@@ -50,13 +63,21 @@ export class KeywordsService {
   async findAll(
     query: GetKeywordsQueryDto,
   ): Promise<PaginatedKeywordsResponseDto> {
-    const { page = 1, limit = 50, isActive } = query;
+    const { page = 1, limit = 50, isActive, search } = query;
 
     const queryBuilder = this.keywordsRepository.createQueryBuilder("keyword");
 
     // Filter by active status if provided
     if (isActive !== undefined) {
       queryBuilder.andWhere("keyword.isActive = :isActive", { isActive });
+    }
+
+    // Search functionality
+    if (search) {
+      queryBuilder.andWhere(
+        "keyword.keyword ILIKE :search",
+        { search: `%${search}%` }
+      );
     }
 
     // Sort by priority (highest first) and then by keyword
@@ -113,15 +134,27 @@ export class KeywordsService {
 
     // Check if new keyword value already exists (if being updated)
     if (updateKeywordDto.keyword) {
+      const trimmedKeyword = updateKeywordDto.keyword.trim();
+
+      // Validate: prevent empty or whitespace-only keywords
+      if (!trimmedKeyword) {
+        throw new ConflictException("Keyword cannot be empty or whitespace only");
+      }
+
+      // Validate: prevent extremely long keywords
+      if (trimmedKeyword.length > 255) {
+        throw new ConflictException("Keyword is too long (max 255 characters)");
+      }
+
       const existing = await this.keywordsRepository.findOne({
-        where: { keyword: updateKeywordDto.keyword.toLowerCase() },
+        where: { keyword: trimmedKeyword.toLowerCase() },
       });
 
       if (existing && existing.id !== id) {
         throw new ConflictException("Keyword already exists");
       }
 
-      keyword.keyword = updateKeywordDto.keyword.toLowerCase();
+      keyword.keyword = trimmedKeyword.toLowerCase();
     }
 
     if (updateKeywordDto.isActive !== undefined) {

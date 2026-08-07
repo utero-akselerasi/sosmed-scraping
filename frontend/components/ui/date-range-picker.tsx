@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n';
+import { formatLocaleDate } from '@/lib/format';
 
 interface DateRangePickerProps {
   startDate: string | null;
@@ -11,16 +13,17 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ startDate, endDate, onChange }: DateRangePickerProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [tempStartDate, setTempStartDate] = useState(startDate || '');
   const [tempEndDate, setTempEndDate] = useState(endDate || '');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const presets = [
-    { label: 'Today', days: 0 },
-    { label: 'Last 7 days', days: 7 },
-    { label: 'Last 30 days', days: 30 },
-    { label: 'Last 90 days', days: 90 },
+    { label: t('dateRange.today'), days: 0 },
+    { label: t('dateRange.last7Days'), days: 7 },
+    { label: t('dateRange.last30Days'), days: 30 },
+    { label: t('dateRange.last90Days'), days: 90 },
   ];
 
   useEffect(() => {
@@ -76,12 +79,12 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
   };
 
   const formatDateRange = () => {
-    if (!startDate || !endDate) return 'Select Date Range';
+    if (!startDate || !endDate) return t('dateRange.select');
 
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    return `${formatLocaleDate(start)} - ${formatLocaleDate(end, { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
 
   const maxDate = new Date().toISOString().split('T')[0];
@@ -102,7 +105,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
               e.stopPropagation();
               clearDates();
             }}
-            aria-label="Clear date range"
+            aria-label={t('dateRange.clear')}
             className="ml-1 rounded p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <X className="h-3 w-3" />
@@ -113,10 +116,10 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
       {isOpen && (
         <div className="absolute top-full mt-2 left-0 z-50 w-80 rounded-xl border border-border bg-popover p-4 shadow-popover">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-popover-foreground">Date Range</h3>
+            <h3 className="text-sm font-semibold text-popover-foreground">{t('dateRange.title')}</h3>
             <button
               onClick={() => setIsOpen(false)}
-              aria-label="Close"
+              aria-label={t('common.close')}
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="h-4 w-4" />
@@ -125,7 +128,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
 
           {/* Quick Presets */}
           <div className="mb-4">
-            <p className="mb-2 text-sm font-medium text-popover-foreground">Quick Select</p>
+            <p className="mb-2 text-sm font-medium text-popover-foreground">{t('dateRange.quickSelect')}</p>
             <div className="grid grid-cols-2 gap-2">
               {presets.map((preset) => (
                 <button
@@ -139,13 +142,13 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
             </div>
           </div>
 
-          {/* Custom Range */}
+{/* Custom Range */}
           <div className="space-y-3">
-            <p className="text-sm font-medium text-popover-foreground">Custom Range</p>
+            <p className="text-sm font-medium text-popover-foreground">{t('dateRange.customRange')}</p>
 
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
-                Start Date
+                {t('dateRange.startDate')}
               </label>
               <input
                 type="date"
@@ -158,7 +161,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
 
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">
-                End Date
+                {t('dateRange.endDate')}
               </label>
               <input
                 type="date"
@@ -177,7 +180,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
                 className="flex-1"
                 size="md"
               >
-                Apply
+                {t('common.apply')}
               </Button>
               <Button
                 onClick={clearDates}
@@ -185,7 +188,7 @@ export function DateRangePicker({ startDate, endDate, onChange }: DateRangePicke
                 className="flex-1"
                 size="md"
               >
-                Clear
+                {t('common.clear')}
               </Button>
             </div>
           </div>

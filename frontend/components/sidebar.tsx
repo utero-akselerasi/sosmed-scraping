@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@/contexts/auth-context';
+import { useI18n } from '@/lib/i18n';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSelector } from '@/components/language-selector';
 import { cn } from '@/lib/utils';
@@ -25,47 +26,42 @@ import {
 } from 'lucide-react';
 
 const NAV_SECTIONS: Array<{
-  label: string;
+  key: string;
   items: Array<{
-    name: string;
+    nameKey: string;
     href: string;
     icon: React.ComponentType<{ className?: string }>;
     roles: string[];
   }>;
 }> = [
   {
-    label: 'Overview',
+    key: 'overview',
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'analyst', 'viewer'] },
-      { name: 'Posts', href: '/dashboard/posts', icon: FileText, roles: ['admin', 'analyst', 'viewer'] },
-      { name: 'Influencers', href: '/dashboard/influencers', icon: Users, roles: ['admin', 'analyst', 'viewer'] },
-      { name: 'Platforms', href: '/dashboard/platforms', icon: Globe, roles: ['admin', 'analyst', 'viewer'] },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'analyst', 'viewer'] },
+      { nameKey: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'analyst', 'viewer'] },
+      { nameKey: 'posts', href: '/dashboard/posts', icon: FileText, roles: ['admin', 'analyst', 'viewer'] },
+      { nameKey: 'influencers', href: '/dashboard/influencers', icon: Users, roles: ['admin', 'analyst', 'viewer'] },
+      { nameKey: 'platforms', href: '/dashboard/platforms', icon: Globe, roles: ['admin', 'analyst', 'viewer'] },
+      { nameKey: 'analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['admin', 'analyst', 'viewer'] },
     ],
   },
   {
-    label: 'Management',
+    key: 'management',
     items: [
-      { name: 'Keywords', href: '/dashboard/keywords', icon: Hash, roles: ['admin'] },
-      { name: 'Users', href: '/dashboard/users', icon: UserCircle, roles: ['admin'] },
-      { name: 'Admin', href: '/dashboard/admin', icon: Settings, roles: ['admin'] },
+      { nameKey: 'keywords', href: '/dashboard/keywords', icon: Hash, roles: ['admin'] },
+      { nameKey: 'users', href: '/dashboard/users', icon: UserCircle, roles: ['admin'] },
+      { nameKey: 'admin', href: '/dashboard/admin', icon: Settings, roles: ['admin'] },
     ],
   },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrator',
-  analyst: 'Analyst',
-  viewer: 'Viewer',
-};
-
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const role = user?.role || 'viewer';
-  const roleLabel = ROLE_LABELS[role] ?? role;
+  const roleLabel = t(`sidebar.role${role.charAt(0).toUpperCase()}${role.slice(1)}`);
 
   const handleLogout = () => {
     logout();
@@ -77,22 +73,22 @@ export default function Sidebar() {
   };
 
   const renderNav = () => (
-    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Sidebar navigation">
+    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label={t('sidebar.navigation')}>
       {NAV_SECTIONS.map((section) => {
         const items = section.items.filter((item) => item.roles.includes(role));
         if (items.length === 0) return null;
 
         return (
-          <div key={section.label}>
+          <div key={section.key}>
             <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-muted">
-              {section.label}
+              {t(`sidebar.${section.key}`)}
             </p>
             <ul className="space-y-1">
               {items.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
                 return (
-                  <li key={item.name}>
+                  <li key={item.nameKey}>
                     <Link
                       href={item.href}
                       onClick={closeMobileMenu}
@@ -121,7 +117,7 @@ export default function Sidebar() {
                             : 'text-sidebar-muted group-hover:text-sidebar-foreground group-hover:scale-105'
                         )}
                       />
-                      <span>{item.name}</span>
+                      <span>{t(`sidebar.${item.nameKey}`)}</span>
                     </Link>
                   </li>
                 );
@@ -143,7 +139,7 @@ export default function Sidebar() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-sidebar-foreground">
-            {user?.fullName || 'User'}
+            {user?.fullName || t('sidebar.userFallback')}
           </p>
           <p className="flex items-center gap-1 text-xs capitalize text-sidebar-muted">
             <ShieldCheck className="h-3 w-3 text-primary" />
@@ -161,15 +157,15 @@ export default function Sidebar() {
           <Sparkles className="h-4 w-4 text-white" />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-bold tracking-tight text-sidebar-foreground">Festival Mbois</p>
+          <p className="text-sm font-bold tracking-tight text-sidebar-foreground">{t('brand.name')}</p>
           <p className="text-[10px] font-medium uppercase tracking-widest text-sidebar-muted">
-            Intelligence Platform
+            {t('brand.tagline')}
           </p>
         </div>
       </div>
       <button
         onClick={closeMobileMenu}
-        aria-label="Close menu"
+        aria-label={t('sidebar.closeMenu')}
         className="rounded-md p-1 text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <X className="h-5 w-5" />
@@ -193,7 +189,7 @@ export default function Sidebar() {
           className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-muted transition-all duration-200 hover:bg-red-50 hover:text-red-600 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="h-[18px] w-[18px] transition-transform duration-200 group-hover:-translate-x-0.5" />
-          <span>Logout</span>
+          <span>{t('sidebar.logout')}</span>
         </button>
       </div>
     </div>
@@ -204,7 +200,7 @@ export default function Sidebar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileMenuOpen((o) => !o)}
-        aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        aria-label={isMobileMenuOpen ? t('sidebar.closeMenu') : t('sidebar.openMenu')}
         aria-expanded={isMobileMenuOpen}
         className="fixed left-4 top-4 z-50 rounded-lg border border-border bg-card p-2 text-card-foreground shadow-card transition-colors hover:bg-accent lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >

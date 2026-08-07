@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './auth-context';
 import { ThemeProvider, useTheme } from './theme-context';
 import { ToastProvider } from '@/components/ui/toast';
+import { I18nProvider } from '@/lib/i18n';
 import { useState } from 'react';
 
 function ThemedToaster() {
@@ -61,12 +62,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <ToastProvider>
-        <AuthProvider>
-          {children}
-          <ThemedToaster />
-        </AuthProvider>
-        </ToastProvider>
+        <I18nProvider>
+          <ToastProvider>
+            <AuthProvider>
+              {children}
+              <ThemedToaster />
+            </AuthProvider>
+          </ToastProvider>
+        </I18nProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

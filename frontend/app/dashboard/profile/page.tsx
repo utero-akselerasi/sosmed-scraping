@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { useI18n } from '@/lib/i18n';
 import { User, Mail, Lock, Save, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/card';
@@ -13,6 +14,7 @@ const inputClasses =
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,18 +50,16 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to update profile');
+        throw new Error(error.message || t('profile.updateFailed'));
       }
-
-      const updatedUser = await response.json();
 
       // Reload page to update user data
       window.location.reload();
 
-      toast.success('Profile updated successfully!');
+      toast.success(t('profile.updateSuccessful'));
       setIsEditingProfile(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile');
+      toast.error(error.message || t('profile.updateFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -69,12 +69,12 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error(t('profile.passwordsDoNotMatch'));
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error(t('profile.passwordTooShort'));
       return;
     }
 
@@ -96,10 +96,10 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to change password');
+        throw new Error(error.message || t('profile.passwordChangeFailed'));
       }
 
-      toast.success('Password changed successfully!');
+      toast.success(t('profile.passwordChanged'));
       setPasswordData({
         currentPassword: '',
         newPassword: '',
@@ -107,17 +107,23 @@ export default function ProfilePage() {
       });
       setIsChangingPassword(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to change password');
+      toast.error(error.message || t('profile.passwordChangeFailed'));
     } finally {
       setIsLoading(false);
     }
   };
 
+  const passwordFields = [
+    { key: 'currentPassword' as const, label: t('profile.currentPassword') },
+    { key: 'newPassword' as const, label: t('profile.newPassword') },
+    { key: 'confirmPassword' as const, label: t('profile.confirmNewPassword') },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Profile Settings"
-        description="Manage your account settings and preferences"
+        title={t('profile.title')}
+        description={t('profile.description')}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -130,7 +136,7 @@ export default function ProfilePage() {
                   {user?.fullName.charAt(0).toUpperCase()}
                 </div>
                 <button
-                  aria-label="Upload profile picture"
+                  aria-label={t('profile.uploadPicture')}
                   className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Camera className="h-4 w-4" />
@@ -153,11 +159,11 @@ export default function ProfilePage() {
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-card-foreground">
-                Profile Information
+                {t('profile.profileInformation')}
               </h2>
               {!isEditingProfile && (
                 <Button onClick={() => setIsEditingProfile(true)} size="sm">
-                  Edit Profile
+                  {t('profile.editProfile')}
                 </Button>
               )}
             </div>
@@ -165,7 +171,7 @@ export default function ProfilePage() {
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-card-foreground">
-                  Full Name
+                  {t('common.fullName')}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -181,7 +187,7 @@ export default function ProfilePage() {
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-card-foreground">
-                  Email Address
+                  {t('common.email')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -199,7 +205,7 @@ export default function ProfilePage() {
                 <div className="flex gap-3">
                   <Button type="submit" disabled={isLoading} loading={isLoading}>
                     <Save className="h-4 w-4" />
-                    {isLoading ? 'Saving...' : 'Save Changes'}
+                    {isLoading ? t('common.saving') : t('profile.saveChanges')}
                   </Button>
                   <Button
                     type="button"
@@ -213,7 +219,7 @@ export default function ProfilePage() {
                       });
                     }}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </div>
               )}
@@ -224,22 +230,18 @@ export default function ProfilePage() {
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-card-foreground">
-                Change Password
+                {t('profile.changePassword')}
               </h2>
               {!isChangingPassword && (
                 <Button onClick={() => setIsChangingPassword(true)} size="sm" variant="outline">
-                  Change Password
+                  {t('profile.changePassword')}
                 </Button>
               )}
             </div>
 
             {isChangingPassword ? (
               <form onSubmit={handleChangePassword} className="space-y-4">
-                {[
-                  { key: 'currentPassword' as const, label: 'Current Password' },
-                  { key: 'newPassword' as const, label: 'New Password' },
-                  { key: 'confirmPassword' as const, label: 'Confirm New Password' },
-                ].map((field) => (
+                {passwordFields.map((field) => (
                   <div key={field.key}>
                     <label className="mb-2 block text-sm font-medium text-card-foreground">
                       {field.label}
@@ -261,7 +263,7 @@ export default function ProfilePage() {
                 <div className="flex gap-3">
                   <Button type="submit" disabled={isLoading} loading={isLoading}>
                     <Save className="h-4 w-4" />
-                    {isLoading ? 'Updating...' : 'Update Password'}
+                    {isLoading ? t('profile.updating') : t('profile.updatePassword')}
                   </Button>
                   <Button
                     type="button"
@@ -276,13 +278,13 @@ export default function ProfilePage() {
                       });
                     }}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </div>
               </form>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Keep your account secure by using a strong password
+                {t('profile.securityHint')}
               </p>
             )}
           </Card>

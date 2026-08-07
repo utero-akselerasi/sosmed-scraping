@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { useI18n } from '@/lib/i18n';
 import {
   Activity,
   Database,
@@ -18,6 +19,8 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 
 export default function AdminPage() {
+  const { t } = useI18n();
+
   const { data: overview } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: () => apiClient.getDashboardOverview(),
@@ -29,33 +32,32 @@ export default function AdminPage() {
   });
 
   const dbStats = [
-    { label: 'Total Posts', value: formatNumber(overview?.totalPosts || 0), bg: 'bg-primary/10 text-primary' },
-    { label: 'Total Influencers', value: formatNumber(overview?.totalInfluencers || 0), bg: 'bg-purple-500/10 text-purple-500' },
-    { label: 'Active Platforms', value: formatNumber(platforms?.filter((platform: any) => platform.isActive).length || 0), bg: 'bg-emerald-500/10 text-emerald-500' },
+    { label: t('dashboard.totalPosts'), value: formatNumber(overview?.totalPosts || 0), bg: 'bg-primary/10 text-primary' },
+    { label: t('dashboard.totalInfluencers'), value: formatNumber(overview?.totalInfluencers || 0), bg: 'bg-purple-500/10 text-purple-500' },
+    { label: t('dashboard.activePlatforms'), value: formatNumber(platforms?.filter((platform: any) => platform.isActive).length || 0), bg: 'bg-emerald-500/10 text-emerald-500' },
   ];
 
   const gradientStats = [
-    { icon: FileText, label: 'Total Posts', value: formatNumber(overview?.totalPosts || 0), gradient: 'from-blue-500 to-blue-600' },
-    { icon: Users, label: 'Total Influencers', value: formatNumber(overview?.totalInfluencers || 0), gradient: 'from-purple-500 to-purple-600' },
-    { icon: TrendingUp, label: 'Avg Engagement', value: overview?.avgEngagementScore?.toFixed(1) || '0', gradient: 'from-emerald-500 to-emerald-600' },
+    { icon: FileText, label: t('dashboard.totalPosts'), value: formatNumber(overview?.totalPosts || 0), gradient: 'from-blue-500 to-blue-600' },
+    { icon: Users, label: t('dashboard.totalInfluencers'), value: formatNumber(overview?.totalInfluencers || 0), gradient: 'from-purple-500 to-purple-600' },
+    { icon: TrendingUp, label: t('dashboard.avgEngagement'), value: overview?.avgEngagementScore?.toFixed(1) || '0', gradient: 'from-emerald-500 to-emerald-600' },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Admin Dashboard"
-        description="System monitoring and health status"
+        title={t('admin.title')}
+        description={t('admin.description')}
       />
 
       {/* System Monitoring */}
       <Card className="p-6">
         <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
           <Activity className="mr-2 h-5 w-5 text-orange-500" />
-          System Monitoring
+          {t('admin.systemMonitoring')}
         </h2>
         <p className="text-sm text-muted-foreground">
-          No monitoring data available. System metrics, uptime, and resource usage
-          will appear here once the monitoring API is available.
+          {t('admin.noMonitoringData')}
         </p>
       </Card>
 
@@ -63,7 +65,7 @@ export default function AdminPage() {
       <Card className="p-6">
         <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
           <Database className="mr-2 h-5 w-5 text-emerald-500" />
-          Database Status
+          {t('admin.databaseStatus')}
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {dbStats.map((stat) => (
@@ -81,18 +83,17 @@ export default function AdminPage() {
       <Card className="p-6">
         <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
           <Server className="mr-2 h-5 w-5 text-primary" />
-          Worker Status
+          {t('admin.workerStatus')}
         </h2>
         <p className="text-sm text-muted-foreground">
-          No worker status available yet. Worker activity will appear here once
-          workers start reporting their status.
+          {t('admin.noWorkerStatus')}
         </p>
       </Card>
 
       {/* Platform Status */}
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold text-card-foreground">
-          Platform Status
+          {t('admin.platformStatus')}
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {platforms?.map((platform: any) => (
@@ -105,7 +106,9 @@ export default function AdminPage() {
                   <XCircle className="h-5 w-5 text-red-500" />
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">Status: {platform.isActive ? 'Active' : 'Inactive'}</p>
+              <p className="text-sm text-muted-foreground">
+                {t('admin.statusValue', { status: platform.isActive ? t('common.active') : t('common.inactive') })}
+              </p>
             </div>
           ))}
         </div>
@@ -130,10 +133,9 @@ export default function AdminPage() {
         <div className="flex items-start">
           <AlertTriangle className="mr-3 mt-0.5 h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-400" />
           <div>
-            <h3 className="text-sm font-medium text-yellow-900 dark:text-yellow-200">System Information</h3>
+            <h3 className="text-sm font-medium text-yellow-900 dark:text-yellow-200">{t('admin.systemInformation')}</h3>
             <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300/80">
-              Content appears here as workers collect real data. All content tables
-              start empty after a fresh setup.
+              {t('admin.systemInfoBody')}
             </p>
           </div>
         </div>

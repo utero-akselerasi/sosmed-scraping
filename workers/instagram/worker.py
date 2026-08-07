@@ -26,6 +26,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from shared.database import DatabaseManager
 from shared.sentiment import sentiment_analyzer
+from shared.worker_lock import WorkerLock
 
 # Try importing instaloader
 try:
@@ -345,7 +346,17 @@ class InstagramWorker:
         logger.info("Starting Instagram worker run...")
         logger.info("=" * 60)
 
-        job_id = await self.db.create_scraping_job(self.platform_id)
+        # Cross-process lock: cegah dua instance Instagram worker berjalan
+        # bersamaan (manual Terminal + run_all.py).
+        lock = WorkerLock('instagram')
+        if not await lock.acquire(self.db):
+            logger.warning(
+                "Instagram worker dilewati: instance lain sudah berjalan "
+                "(lock aktif). Jalankan setelah proses sebelumnya selesai."
+            )
+            return
+
+        job_id = None
         posts_collected = 0
         errors = 0
 
@@ -353,8 +364,11 @@ class InstagramWorker:
             if not self.session_valid:
                 message = "Instagram session INVALID - worker dihentikan, tidak ada fallback dummy"
                 logger.error(message)
+                job_id = await self.db.create_scraping_job(self.platform_id)
                 await self.db.update_scraping_job(job_id, 'failed', 0, 0, message)
                 return
+
+            job_id = await self.db.create_scraping_job(self.platform_id)
 
             for keyword in self.keywords:
                 logger.info(f"\n📍 Processing keyword: {keyword}")
@@ -387,9 +401,12 @@ class InstagramWorker:
 
         except Exception as e:
             logger.error(f"Instagram worker failed: {e}")
-            await self.db.update_scraping_job(
-                job_id, 'failed', posts_collected, errors, str(e)
-            )
+            if job_id:
+                await self.db.update_scraping_job(
+                    job_id, 'failed', posts_collected, errors, str(e)
+                )
+        finally:
+            await lock.release()
 
 
 async def main():

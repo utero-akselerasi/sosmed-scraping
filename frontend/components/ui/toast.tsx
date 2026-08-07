@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -88,6 +89,7 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
 }
 
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) => void }) {
+  const { t } = useI18n();
   const icons = {
     success: '✓',
     error: '✕',
@@ -123,7 +125,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
       </div>
       <button
         onClick={() => onRemove(toast.id)}
-        aria-label="Dismiss notification"
+        aria-label={t('common.dismiss')}
         className="flex-shrink-0 text-current opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <X className="h-4 w-4" />

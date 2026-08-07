@@ -4,16 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-export type LanguageCode = 'en' | 'id' | 'ar';
-
-export const LANGUAGES: Array<{ code: LanguageCode; label: string; native: string }> = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'id', label: 'Indonesia', native: 'Bahasa Indonesia' },
-  { code: 'ar', label: 'Arabic', native: 'العربية' },
-];
-
-export const LANGUAGE_STORAGE_KEY = 'language';
+import { LANGUAGES, useI18n, type Language } from '@/lib/i18n';
 
 interface LanguageSelectorProps {
   className?: string;
@@ -28,18 +19,9 @@ export function LanguageSelector({
   align = 'right',
   direction = 'down',
 }: LanguageSelectorProps) {
+  const { language, setLanguage, t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [language, setLanguage] = useState<LanguageCode>('en');
-  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY) as LanguageCode | null;
-    if (saved && LANGUAGES.some((l) => l.code === saved)) {
-      setLanguage(saved);
-    }
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -59,9 +41,8 @@ export function LanguageSelector({
     };
   }, [open]);
 
-  const select = (code: LanguageCode) => {
+  const select = (code: Language) => {
     setLanguage(code);
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
     setOpen(false);
   };
 
@@ -74,17 +55,17 @@ export function LanguageSelector({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Language: ${current.label}`}
+        aria-label={`${t('language.label')}: ${current.label}`}
         className={cn(
           'inline-flex h-9 items-center justify-center gap-2 rounded-lg px-2.5 text-sm font-medium text-card-foreground transition-all duration-200',
           'hover:bg-accent hover:text-accent-foreground active:scale-[0.98]',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
         )}
       >
-        {showLabel && <span className="text-sm font-medium text-card-foreground">Language</span>}
+        {showLabel && <span className="text-sm font-medium text-card-foreground">{t('language.label')}</span>}
         <Globe className="text-blue-500" style={{ width: 18, height: 18 }} />
         <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
-          {mounted ? current.native : 'English'}
+          {current.native}
         </span>
         <ChevronDown
           className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform duration-200', open && 'rotate-180')}
@@ -95,7 +76,7 @@ export function LanguageSelector({
         {open && (
           <motion.ul
             role="listbox"
-            aria-label="Select language"
+            aria-label={t('language.select')}
             initial={{ opacity: 0, y: direction === 'up' ? 6 : -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: direction === 'up' ? 6 : -6, scale: 0.98 }}

@@ -3,6 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme } from '@/contexts/theme-context';
 import { getChartTheme, getChartTooltipStyle } from './chart-theme';
+import { useI18n } from '@/lib/i18n';
 
 interface EngagementAreaChartProps {
   data: Array<{
@@ -18,10 +19,12 @@ export function EngagementAreaChart({
   data,
   title,
   color = '#3b82f6',
-  label = 'Engagement',
+  label,
 }: EngagementAreaChartProps) {
   const { theme } = useTheme();
+  const { t } = useI18n();
   const chartTheme = getChartTheme(theme);
+  const seriesLabel = label ?? t('charts.engagement');
 
   return (
     <div className="w-full">
@@ -55,7 +58,7 @@ export function EngagementAreaChart({
             stroke={color}
             fillOpacity={1}
             fill="url(#colorValue)"
-            name={label}
+            name={seriesLabel}
           />
         </AreaChart>
       </ResponsiveContainer>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { useI18n } from '@/lib/i18n';
 import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor } from '@/lib/format';
 import { Search, Filter, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, TrendingUp } from 'lucide-react';
 import { Post, SentimentType } from '@/types';
@@ -21,6 +22,7 @@ const inputClasses =
   'w-full rounded-lg border border-input bg-card px-4 py-2 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40';
 
 export default function PostsPage() {
+  const { t } = useI18n();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [sentiment, setSentiment] = useState<string>('');
@@ -69,10 +71,10 @@ export default function PostsPage() {
     try {
       if (postsData?.data) {
         ExportService.exportPosts(postsData.data);
-        success('Export Successful', `Exported ${postsData.data.length} posts to CSV`);
+        success(t('posts.exportSuccessful'), t('posts.exportedToCsv', { count: postsData.data.length }));
       }
     } catch (err) {
-      error('Export Failed', 'Failed to export posts. Please try again.');
+      error(t('posts.exportFailed'), t('posts.exportFailedMsg'));
     }
   };
 
@@ -80,10 +82,10 @@ export default function PostsPage() {
     try {
       if (postsData?.data) {
         ExportService.downloadJSON(postsData.data, `posts_export_${new Date().toISOString().split('T')[0]}`);
-        success('Export Successful', `Exported ${postsData.data.length} posts to JSON`);
+        success(t('posts.exportSuccessful'), t('posts.exportedToJson', { count: postsData.data.length }));
       }
     } catch (err) {
-      error('Export Failed', 'Failed to export posts. Please try again.');
+      error(t('posts.exportFailed'), t('posts.exportFailedMsg'));
     }
   };
 
@@ -92,33 +94,27 @@ export default function PostsPage() {
   };
 
   const handleApplyPreset = (preset: any) => {
-    // Apply preset filters
     if (preset.filters.sentiment) {
       setSentiment(preset.filters.sentiment);
     } else {
       setSentiment('');
     }
-
     if (preset.filters.platformId) {
       setPlatformId(preset.filters.platformId);
     } else {
       setPlatformId('');
     }
-
     if (preset.filters.search) {
       setSearch(preset.filters.search);
     }
-
     if (preset.filters.startDate) {
       setStartDate(preset.filters.startDate);
     }
-
     if (preset.filters.endDate) {
       setEndDate(preset.filters.endDate);
     }
-
     setPage(1);
-    success('Preset Applied', `Applied "${preset.name}" preset`);
+    success(t('posts.presetApplied'), t('posts.presetAppliedMsg', { name: preset.name }));
   };
 
   const getCurrentFilters = () => ({
@@ -137,18 +133,20 @@ export default function PostsPage() {
 
   const statTiles = stats
     ? [
-        { label: 'Total Posts', value: formatNumber(stats.totalPosts), bg: 'bg-muted/50 text-card-foreground' },
-        { label: 'Positive', value: formatNumber(stats.sentimentDistribution?.positive || 0), bg: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-        { label: 'Neutral', value: formatNumber(stats.sentimentDistribution?.neutral || 0), bg: 'bg-muted/50 text-muted-foreground' },
-        { label: 'Negative', value: formatNumber(stats.sentimentDistribution?.negative || 0), bg: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' },
+        { label: t('common.posts').charAt(0).toUpperCase() + t('common.posts').slice(1), value: formatNumber(stats.totalPosts), bg: 'bg-muted/50 text-card-foreground' },
+        { label: t('common.positive'), value: formatNumber(stats.sentimentDistribution?.positive || 0), bg: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+        { label: t('common.neutral'), value: formatNumber(stats.sentimentDistribution?.neutral || 0), bg: 'bg-muted/50 text-muted-foreground' },
+        { label: t('common.negative'), value: formatNumber(stats.sentimentDistribution?.negative || 0), bg: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400' },
       ]
     : [];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Posts"
-        description={postsData?.meta?.total ? `${formatNumber(postsData.meta.total)} total posts` : '0 total posts'}
+        title={t('posts.title')}
+        description={postsData?.meta?.total
+          ? t('posts.totalLabel', { count: formatNumber(postsData.meta.total) })
+          : t('posts.totalLabel', { count: '0' })}
       >
         <ExportDropdown
           onExportCSV={handleExportCSV}
@@ -186,13 +184,13 @@ export default function PostsPage() {
       <Card className="p-4">
         <div className="mb-4 flex items-center gap-2">
           <Filter className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold text-card-foreground">Filters</h2>
+          <h2 className="text-lg font-semibold text-card-foreground">{t('posts.filters')}</h2>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-card-foreground">
-              Search
+              {t('common.search')}
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -200,7 +198,7 @@ export default function PostsPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by content, author, hashtags..."
+                placeholder={t('posts.searchPlaceholder')}
                 className={cn(inputClasses, 'pl-10')}
               />
             </div>
@@ -208,7 +206,7 @@ export default function PostsPage() {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-card-foreground">
-              Sentiment
+              {t('common.status')}
             </label>
             <select
               value={sentiment}
@@ -218,16 +216,16 @@ export default function PostsPage() {
               }}
               className={inputClasses}
             >
-              <option value="">All Sentiments</option>
-              <option value="positive">Positive</option>
-              <option value="neutral">Neutral</option>
-              <option value="negative">Negative</option>
+              <option value="">{t('common.allSentiments')}</option>
+              <option value="positive">{t('common.positive')}</option>
+              <option value="neutral">{t('common.neutral')}</option>
+              <option value="negative">{t('common.negative')}</option>
             </select>
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-card-foreground">
-              Platform
+              {t('common.platform')}
             </label>
             <select
               value={platformId}
@@ -237,7 +235,7 @@ export default function PostsPage() {
               }}
               className={inputClasses}
             >
-              <option value="">All Platforms</option>
+              <option value="">{t('common.allPlatforms')}</option>
               {platforms?.map((platform: any) => (
                 <option key={platform.id} value={platform.id}>
                   {platform.name}
@@ -252,7 +250,7 @@ export default function PostsPage() {
       {isLoading ? (
         <Card className="p-12 text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading posts...</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t('posts.loading')}</p>
         </Card>
       ) : postsData?.data && postsData.data.length > 0 ? (
         <>
@@ -303,7 +301,9 @@ export default function PostsPage() {
                       </span>
                     ))}
                     {post.hashtags.length > 5 && (
-                      <span className="text-sm text-muted-foreground">+{post.hashtags.length - 5} more</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t('posts.moreTags', { count: post.hashtags.length - 5 })}
+                      </span>
                     )}
                   </div>
                 )}
@@ -327,7 +327,7 @@ export default function PostsPage() {
                         href={post.postUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Open original post"
+                        aria-label={t('posts.openOriginal')}
                         className="text-primary transition-colors hover:text-primary/80"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -344,9 +344,11 @@ export default function PostsPage() {
           {postsData.meta && postsData.meta.totalPages > 1 && (
             <Card className="flex flex-col items-center justify-between gap-3 p-4 sm:flex-row">
               <p className="text-sm text-muted-foreground">
-                Showing {(postsData.meta.page - 1) * postsData.meta.limit + 1} to{' '}
-                {Math.min(postsData.meta.page * postsData.meta.limit, postsData.meta.total)} of{' '}
-                {formatNumber(postsData.meta.total)} posts
+                {t('posts.showingOf', {
+                  start: (postsData.meta.page - 1) * postsData.meta.limit + 1,
+                  end: Math.min(postsData.meta.page * postsData.meta.limit, postsData.meta.total),
+                  total: formatNumber(postsData.meta.total),
+                })}
               </p>
               <div className="flex items-center space-x-2">
                 <Button
@@ -355,17 +357,17 @@ export default function PostsPage() {
                   variant="outline"
                   size="sm"
                 >
-                  Previous
+                  {t('common.previous')}
                 </Button>
                 <span className="rounded-lg bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-                  Page {page} of {postsData.meta.totalPages}
+                  {t('common.pageOf', { page, totalPages: postsData.meta.totalPages })}
                 </span>
                 <Button
                   onClick={() => setPage(page + 1)}
                   disabled={page >= postsData.meta.totalPages}
                   size="sm"
                 >
-                  Next
+                  {t('common.next')}
                 </Button>
               </div>
             </Card>
@@ -373,8 +375,8 @@ export default function PostsPage() {
         </>
       ) : (
         <Card className="p-12 text-center">
-          <p className="text-lg text-card-foreground">No posts found</p>
-          <p className="mt-2 text-sm text-muted-foreground">Try adjusting your filters</p>
+          <p className="text-lg text-card-foreground">{t('posts.noPosts')}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('posts.noPostsHint')}</p>
         </Card>
       )}
 

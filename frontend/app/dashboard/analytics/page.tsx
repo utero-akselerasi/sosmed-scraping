@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { formatNumber, formatPercentage, formatCompactNumber } from '@/lib/format';
+import { useI18n } from '@/lib/i18n';
+import { formatNumber, formatPercentage, formatCompactNumber, formatLocaleDate } from '@/lib/format';
 import { TrendingUp, BarChart3, Hash, Heart, Activity, PieChart, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
 import { SentimentBarChart } from '@/components/charts/sentiment-bar-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
@@ -13,6 +14,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { cn } from '@/lib/utils';
 
 export default function AnalyticsPage() {
+  const { t } = useI18n();
+
   const { data: sentiment } = useQuery({
     queryKey: ['sentiment-analytics'],
     queryFn: () => apiClient.getSentimentAnalytics(),
@@ -40,9 +43,9 @@ export default function AnalyticsPage() {
 
   // Prepare sentiment pie data
   const sentimentPieData = [
-    { name: 'Positive', value: sentiment?.overall?.positive || 0 },
-    { name: 'Neutral', value: sentiment?.overall?.neutral || 0 },
-    { name: 'Negative', value: sentiment?.overall?.negative || 0 },
+    { name: t('common.positive'), value: sentiment?.overall?.positive || 0 },
+    { name: t('common.neutral'), value: sentiment?.overall?.neutral || 0 },
+    { name: t('common.negative'), value: sentiment?.overall?.negative || 0 },
   ];
 
   // Prepare sentiment by platform data for bar chart
@@ -55,14 +58,14 @@ export default function AnalyticsPage() {
 
   // Format trend data for charts
   const dailyTrendData = trends?.dailyPosts?.slice(-14).map((item: any) => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: formatLocaleDate(item.date),
     count: item.count,
     engagement: item.engagement,
   })) || [];
 
   // Prepare engagement over time data
   const engagementOverTimeData = trends?.dailyPosts?.slice(-14).map((item: any) => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: formatLocaleDate(item.date),
     likes: item.likes || 0,
     comments: item.comments || 0,
     shares: item.shares || 0,
@@ -70,7 +73,7 @@ export default function AnalyticsPage() {
 
   const quickStats = [
     {
-      label: 'Positive Rate',
+      label: t('analytics.positiveRate'),
       value: formatPercentage(sentimentTotal ? (sentiment?.overall?.positive || 0) / sentimentTotal : 0),
       icon: Activity,
       gradient: 'from-emerald-500 to-emerald-600',
@@ -78,7 +81,7 @@ export default function AnalyticsPage() {
       labelColor: 'text-emerald-100',
     },
     {
-      label: 'Total Engagement',
+      label: t('analytics.totalEngagement'),
       value: formatCompactNumber((engagement?.totalLikes || 0) + (engagement?.totalComments || 0) + (engagement?.totalShares || 0)),
       icon: Heart,
       gradient: 'from-blue-500 to-blue-600',
@@ -86,7 +89,7 @@ export default function AnalyticsPage() {
       labelColor: 'text-blue-100',
     },
     {
-      label: 'Avg Engagement',
+      label: t('analytics.avgEngagement'),
       value: engagement?.avgEngagementPerPost?.toFixed(1) || '0',
       icon: BarChart3,
       gradient: 'from-purple-500 to-purple-600',
@@ -94,7 +97,7 @@ export default function AnalyticsPage() {
       labelColor: 'text-purple-100',
     },
     {
-      label: 'Top Hashtags',
+      label: t('analytics.topHashtags'),
       value: topHashtags?.length || 0,
       icon: Hash,
       gradient: 'from-orange-500 to-orange-600',
@@ -104,35 +107,59 @@ export default function AnalyticsPage() {
   ];
 
   const sentimentStatTiles = [
-    { label: 'Positive', value: sentiment?.overall?.positive || 0, bg: 'bg-emerald-50 dark:bg-emerald-500/10', valueColor: 'text-emerald-600 dark:text-emerald-400', labelColor: 'text-emerald-900 dark:text-emerald-200' },
-    { label: 'Neutral', value: sentiment?.overall?.neutral || 0, bg: 'bg-muted', valueColor: 'text-muted-foreground', labelColor: 'text-card-foreground' },
-    { label: 'Negative', value: sentiment?.overall?.negative || 0, bg: 'bg-red-50 dark:bg-red-500/10', valueColor: 'text-red-600 dark:text-red-400', labelColor: 'text-red-900 dark:text-red-200' },
+    { label: t('common.positive'), value: sentiment?.overall?.positive || 0, bg: 'bg-emerald-50 dark:bg-emerald-500/10', valueColor: 'text-emerald-600 dark:text-emerald-400', labelColor: 'text-emerald-900 dark:text-emerald-200' },
+    { label: t('common.neutral'), value: sentiment?.overall?.neutral || 0, bg: 'bg-muted', valueColor: 'text-muted-foreground', labelColor: 'text-card-foreground' },
+    { label: t('common.negative'), value: sentiment?.overall?.negative || 0, bg: 'bg-red-50 dark:bg-red-500/10', valueColor: 'text-red-600 dark:text-red-400', labelColor: 'text-red-900 dark:text-red-200' },
   ];
 
   const engagementStatTiles = [
     {
-      label: 'Total Likes', value: formatCompactNumber(engagement?.totalLikes || 0), sub: `Avg: ${engagement?.avgLikesPerPost?.toFixed(1) || 0} per post`,
-      gradient: 'from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 border-red-100 dark:border-red-500/20', color: 'text-red-600 dark:text-red-400',
+      label: t('analytics.totalLikes'),
+      value: formatCompactNumber(engagement?.totalLikes || 0),
+      sub: t('analytics.avgPerPost', { avg: engagement?.avgLikesPerPost?.toFixed(1) || 0 }),
+      gradient: 'from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 border-red-100 dark:border-red-500/20',
+      color: 'text-red-600 dark:text-red-400',
     },
     {
-      label: 'Total Comments', value: formatCompactNumber(engagement?.totalComments || 0), sub: `Avg: ${engagement?.avgCommentsPerPost?.toFixed(1) || 0} per post`,
-      gradient: 'from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 border-blue-100 dark:border-blue-500/20', color: 'text-blue-600 dark:text-blue-400',
+      label: t('analytics.totalComments'),
+      value: formatCompactNumber(engagement?.totalComments || 0),
+      sub: t('analytics.avgPerPost', { avg: engagement?.avgCommentsPerPost?.toFixed(1) || 0 }),
+      gradient: 'from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 border-blue-100 dark:border-blue-500/20',
+      color: 'text-blue-600 dark:text-blue-400',
     },
     {
-      label: 'Total Shares', value: formatCompactNumber(engagement?.totalShares || 0), sub: `Avg: ${engagement?.avgSharesPerPost?.toFixed(1) || 0} per post`,
-      gradient: 'from-purple-50 to-indigo-50 dark:from-purple-500/10 dark:to-indigo-500/10 border-purple-100 dark:border-purple-500/20', color: 'text-purple-600 dark:text-purple-400',
+      label: t('analytics.totalShares'),
+      value: formatCompactNumber(engagement?.totalShares || 0),
+      sub: t('analytics.avgPerPost', { avg: engagement?.avgSharesPerPost?.toFixed(1) || 0 }),
+      gradient: 'from-purple-50 to-indigo-50 dark:from-purple-500/10 dark:to-indigo-500/10 border-purple-100 dark:border-purple-500/20',
+      color: 'text-purple-600 dark:text-purple-400',
     },
     {
-      label: 'Total Views', value: formatCompactNumber(engagement?.totalViews || 0), sub: 'Across all platforms',
-      gradient: 'from-orange-50 to-yellow-50 dark:from-orange-500/10 dark:to-yellow-500/10 border-orange-100 dark:border-orange-500/20', color: 'text-orange-600 dark:text-orange-400',
+      label: t('analytics.totalViews'),
+      value: formatCompactNumber(engagement?.totalViews || 0),
+      sub: t('analytics.acrossAllPlatforms'),
+      gradient: 'from-orange-50 to-yellow-50 dark:from-orange-500/10 dark:to-yellow-500/10 border-orange-100 dark:border-orange-500/20',
+      color: 'text-orange-600 dark:text-orange-400',
     },
   ];
+
+  const platformBars = (platform: any) => {
+    const total = platform.positive + platform.neutral + platform.negative;
+    const positivePercent = total > 0 ? (platform.positive / total) * 100 : 0;
+    const neutralPercent = total > 0 ? (platform.neutral / total) * 100 : 0;
+    const negativePercent = total > 0 ? (platform.negative / total) * 100 : 0;
+    return [
+      { label: t('common.positive'), pct: positivePercent, text: 'text-emerald-700 dark:text-emerald-400', bar: 'bg-emerald-500' },
+      { label: t('common.neutral'), pct: neutralPercent, text: 'text-card-foreground', bar: 'bg-muted-foreground' },
+      { label: t('common.negative'), pct: negativePercent, text: 'text-red-700 dark:text-red-400', bar: 'bg-red-500' },
+    ];
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Analytics Dashboard"
-        description="Deep insights and trends analysis for Festival Mbois"
+        title={t('analytics.title')}
+        description={t('analytics.description')}
       />
 
       {/* Quick Stats */}
@@ -158,7 +185,7 @@ export default function AnalyticsPage() {
         <Card className="p-6">
           <CustomPieChart
             data={sentimentPieData}
-            title="Overall Sentiment Distribution"
+            title={t('analytics.overallSentiment')}
             colors={['#10b981', '#64748b', '#ef4444']}
           />
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
@@ -174,7 +201,7 @@ export default function AnalyticsPage() {
         </Card>
 
         <Card className="p-6">
-          <TrendChart data={dailyTrendData} title="Posts & Engagement Trend (14 Days)" />
+          <TrendChart data={dailyTrendData} title={t('analytics.postsEngagementTrend')} />
         </Card>
       </div>
 
@@ -182,7 +209,7 @@ export default function AnalyticsPage() {
       <Card className="p-6">
         <SentimentBarChart
           data={platformSentimentData}
-          title="Sentiment Analysis by Platform"
+          title={t('analytics.sentimentByPlatform')}
         />
       </Card>
 
@@ -190,7 +217,7 @@ export default function AnalyticsPage() {
       <Card className="p-6">
         <EngagementAreaChart
           data={engagementOverTimeData}
-          title="Engagement Metrics Over Time (14 Days)"
+          title={t('analytics.engagementOverTime')}
         />
       </Card>
 
@@ -198,7 +225,7 @@ export default function AnalyticsPage() {
       <Card className="p-6">
         <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
           <Heart className="mr-2 h-5 w-5 text-red-500" />
-          Engagement Statistics
+          {t('analytics.engagementStatistics')}
         </h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {engagementStatTiles.map((tile) => (
@@ -219,7 +246,7 @@ export default function AnalyticsPage() {
       <Card className="p-6">
         <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
           <Hash className="mr-2 h-5 w-5 text-primary" />
-          Top Trending Hashtags
+          {t('analytics.topTrendingHashtags')}
         </h2>
         <div className="flex flex-wrap gap-3">
           {topHashtags?.slice(0, 30).map((item: any, idx: number) => {
@@ -239,9 +266,9 @@ export default function AnalyticsPage() {
             );
           })}
         </div>
-        {!topHashtags || topHashtags.length === 0 && (
+        {(!topHashtags || topHashtags.length === 0) && (
           <p className="py-8 text-center text-muted-foreground">
-            No hashtags data available yet
+            {t('analytics.noHashtagsData')}
           </p>
         )}
       </Card>
@@ -251,7 +278,7 @@ export default function AnalyticsPage() {
         <Card className="p-6">
           <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
             <TrendingUp className="mr-2 h-5 w-5 text-emerald-500" />
-            Top Engaging Posts
+            {t('analytics.topEngagingPosts')}
           </h2>
           <div className="space-y-3">
             {engagement.topEngagingPosts.slice(0, 5).map((post: any, idx: number) => (
@@ -275,7 +302,7 @@ export default function AnalyticsPage() {
                               : 'bg-muted text-muted-foreground'
                         )}
                       >
-                        {post.sentiment || 'neutral'}
+                        {post.sentiment || t('common.neutral').toLowerCase()}
                       </span>
                     </div>
                     <p className="line-clamp-2 text-sm text-card-foreground/90">{post.content}</p>
@@ -289,7 +316,7 @@ export default function AnalyticsPage() {
                     <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                       {post.engagementScore.toFixed(1)}
                     </p>
-                    <p className="text-xs text-muted-foreground">engagement</p>
+                    <p className="text-xs text-muted-foreground">{t('analytics.engagementLabel')}</p>
                   </div>
                 </div>
               </div>
@@ -302,21 +329,12 @@ export default function AnalyticsPage() {
       <Card className="p-6">
         <h2 className="mb-4 flex items-center text-lg font-semibold text-card-foreground">
           <PieChart className="mr-2 h-5 w-5 text-indigo-500" />
-          Detailed Sentiment by Platform
+          {t('analytics.detailedSentiment')}
         </h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sentiment?.byPlatform?.map((platform: any) => {
+            const bars = platformBars(platform);
             const total = platform.positive + platform.neutral + platform.negative;
-            const positivePercent = total > 0 ? (platform.positive / total) * 100 : 0;
-            const neutralPercent = total > 0 ? (platform.neutral / total) * 100 : 0;
-            const negativePercent = total > 0 ? (platform.negative / total) * 100 : 0;
-
-            const bars = [
-              { label: 'Positive', pct: positivePercent, text: 'text-emerald-700 dark:text-emerald-400', bar: 'bg-emerald-500' },
-              { label: 'Neutral', pct: neutralPercent, text: 'text-card-foreground', bar: 'bg-muted-foreground' },
-              { label: 'Negative', pct: negativePercent, text: 'text-red-700 dark:text-red-400', bar: 'bg-red-500' },
-            ];
-
             return (
               <div key={platform.platformName} className="rounded-xl border border-border p-4 transition-all duration-200 hover:shadow-card-hover">
                 <h3 className="mb-3 text-center font-semibold text-card-foreground">{platform.platformName}</h3>
@@ -345,19 +363,19 @@ export default function AnalyticsPage() {
                     <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                       {formatNumber(platform.positive)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Positive</p>
+                    <p className="text-xs text-muted-foreground">{t('common.positive')}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-lg font-bold text-muted-foreground">
                       {formatNumber(platform.neutral)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Neutral</p>
+                    <p className="text-xs text-muted-foreground">{t('common.neutral')}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-lg font-bold text-red-600 dark:text-red-400">
                       {formatNumber(platform.negative)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Negative</p>
+                    <p className="text-xs text-muted-foreground">{t('common.negative')}</p>
                   </div>
                 </div>
               </div>
@@ -367,7 +385,7 @@ export default function AnalyticsPage() {
 
         {(!sentiment?.byPlatform || sentiment.byPlatform.length === 0) && (
           <p className="py-8 text-center text-muted-foreground">
-            No platform sentiment data available yet
+            {t('analytics.noPlatformSentiment')}
           </p>
         )}
       </Card>

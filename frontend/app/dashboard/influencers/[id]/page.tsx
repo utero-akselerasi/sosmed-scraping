@@ -3,7 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-import { formatNumber, formatCompactNumber } from '@/lib/format';
+import { useI18n } from '@/lib/i18n';
+import { formatNumber, formatCompactNumber, formatLocaleDate } from '@/lib/format';
 import {
   ArrowLeft,
   Users,
@@ -19,6 +20,7 @@ import { EngagementAreaChart } from '@/components/charts/area-chart';
 import { Card } from '@/components/ui/card';
 
 export default function InfluencerDetailPage() {
+  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
   const influencerId = params.id as string;
@@ -63,7 +65,7 @@ export default function InfluencerDetailPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
-          <p className="mt-4 text-sm text-muted-foreground">Loading influencer...</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t('influencers.loadingDetail')}</p>
         </div>
       </div>
     );
@@ -72,14 +74,14 @@ export default function InfluencerDetailPage() {
   if (!influencer) {
     return (
       <div className="py-12 text-center">
-        <p className="text-muted-foreground">Influencer not found</p>
+        <p className="text-muted-foreground">{t('influencers.notFound')}</p>
       </div>
     );
   }
 
   // Transform engagement data for chart
   const chartEngagementData = engagementData?.map((item: any) => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: formatLocaleDate(item.date),
     likes: item.likes,
     comments: item.comments,
     shares: item.shares,
@@ -94,16 +96,16 @@ export default function InfluencerDetailPage() {
   const pieColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
 
   const mainStats = [
-    { label: 'Followers', value: formatCompactNumber(influencer.followersCount), icon: Users, color: 'text-primary' },
-    { label: 'Total Posts', value: formatNumber(influencer.totalPosts || influencer.postsCount), icon: BarChart3, color: 'text-emerald-500' },
-    { label: 'Engagement Rate', value: `${influencer.engagementRate?.toFixed(2)}%`, icon: TrendingUp, color: 'text-purple-500' },
-    { label: 'Avg Engagement', value: formatCompactNumber(influencer.avgEngagementScore || 0), icon: Heart, color: 'text-red-500' },
+    { label: t('common.followers'), value: formatCompactNumber(influencer.followersCount), icon: Users, color: 'text-primary' },
+    { label: t('influencers.totalPosts'), value: formatNumber(influencer.totalPosts || influencer.postsCount), icon: BarChart3, color: 'text-emerald-500' },
+    { label: t('influencers.engagementRateValue'), value: `${influencer.engagementRate?.toFixed(2)}%`, icon: TrendingUp, color: 'text-purple-500' },
+    { label: t('influencers.avgEngagement'), value: formatCompactNumber(influencer.avgEngagementScore || 0), icon: Heart, color: 'text-red-500' },
   ];
 
   const extraStats = [
-    { label: 'Total Likes', value: formatCompactNumber(influencer.totalLikes), icon: Heart, bg: 'bg-red-50 dark:bg-red-500/10', color: 'text-red-500' },
-    { label: 'Total Comments', value: formatCompactNumber(influencer.totalComments), icon: MessageCircle, bg: 'bg-primary/5', color: 'text-primary' },
-    { label: 'Total Shares', value: formatCompactNumber(influencer.totalShares), icon: Share2, bg: 'bg-emerald-500/5', color: 'text-emerald-500' },
+    { label: t('influencers.totalLikes'), value: formatCompactNumber(influencer.totalLikes), icon: Heart, bg: 'bg-red-50 dark:bg-red-500/10', color: 'text-red-500' },
+    { label: t('influencers.totalComments'), value: formatCompactNumber(influencer.totalComments), icon: MessageCircle, bg: 'bg-primary/5', color: 'text-primary' },
+    { label: t('influencers.totalShares'), value: formatCompactNumber(influencer.totalShares), icon: Share2, bg: 'bg-emerald-500/5', color: 'text-emerald-500' },
   ];
 
   return (
@@ -112,12 +114,12 @@ export default function InfluencerDetailPage() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          aria-label="Go back"
+          aria-label={t('influencers.goBack')}
           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-2xl font-bold text-card-foreground">Influencer Profile</h1>
+        <h1 className="text-2xl font-bold text-card-foreground">{t('influencers.detailTitle')}</h1>
       </div>
 
       {/* Profile Header */}
@@ -195,22 +197,22 @@ export default function InfluencerDetailPage() {
       {/* Sentiment Distribution */}
       {influencer.sentimentDistribution && (
         <Card className="p-6">
-          <h3 className="mb-4 text-lg font-semibold text-card-foreground">Sentiment Analysis</h3>
+          <h3 className="mb-4 text-lg font-semibold text-card-foreground">{t('influencers.sentimentAnalysis')}</h3>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-500/10">
-              <p className="text-sm text-emerald-900 dark:text-emerald-200">Positive</p>
+              <p className="text-sm text-emerald-900 dark:text-emerald-200">{t('common.positive')}</p>
               <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {influencer.sentimentDistribution.positive}
               </p>
             </div>
             <div className="rounded-xl bg-muted p-4 text-center">
-              <p className="text-sm text-card-foreground">Neutral</p>
+              <p className="text-sm text-card-foreground">{t('common.neutral')}</p>
               <p className="text-2xl font-bold text-muted-foreground">
                 {influencer.sentimentDistribution.neutral}
               </p>
             </div>
             <div className="rounded-xl bg-red-50 p-4 text-center dark:bg-red-500/10">
-              <p className="text-sm text-red-900 dark:text-red-200">Negative</p>
+              <p className="text-sm text-red-900 dark:text-red-200">{t('common.negative')}</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {influencer.sentimentDistribution.negative}
               </p>
@@ -223,7 +225,7 @@ export default function InfluencerDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-6">
           <h3 className="mb-4 text-lg font-semibold text-card-foreground">
-            Engagement Over Time (Last 30 Days)
+            {t('influencers.engagementOverTime')}
           </h3>
           {isLoadingEngagement ? (
             <div className="flex h-64 items-center justify-center">
@@ -233,13 +235,13 @@ export default function InfluencerDetailPage() {
             <EngagementAreaChart data={chartEngagementData} />
           ) : (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
-              No engagement data available
+              {t('influencers.noEngagementData')}
             </div>
           )}
         </Card>
 
         <Card className="p-6">
-          <h3 className="mb-4 text-lg font-semibold text-card-foreground">Content Type Distribution</h3>
+          <h3 className="mb-4 text-lg font-semibold text-card-foreground">{t('influencers.contentTypeDistribution')}</h3>
           {isLoadingContentTypes ? (
             <div className="flex h-64 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -248,7 +250,7 @@ export default function InfluencerDetailPage() {
             <CustomPieChart data={chartContentTypeData} colors={pieColors} />
           ) : (
             <div className="flex h-64 items-center justify-center text-muted-foreground">
-              No content type data available
+              {t('influencers.noContentTypeData')}
             </div>
           )}
         </Card>

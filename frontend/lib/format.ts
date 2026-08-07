@@ -1,51 +1,82 @@
-﻿import { format, formatDistanceToNow } from 'date-fns';
+﻿import { format, formatDistanceToNow, type Locale } from 'date-fns';
+import { enUS, id as idLocale } from 'date-fns/locale';
+import { getLanguage } from '@/lib/i18n';
 
 /**
- * Format number with thousands separator
+ * Locale code used by Intl APIs for the active app language.
  */
-export function formatNumber(num: number): string {
-  return new Intl.NumberFormat('id-ID').format(num);
+export function getIntlLocale(): string {
+  return getLanguage() === 'id' ? 'id-ID' : 'en-US';
 }
 
 /**
- * Format number to compact notation (1K, 1M, etc)
+ * date-fns locale for the active app language.
+ */
+export function getDateFnsLocale(): Locale {
+  return getLanguage() === 'id' ? idLocale : enUS;
+}
+
+/**
+ * Format number with thousands separator (locale-aware)
+ */
+export function formatNumber(num: number): string {
+  return new Intl.NumberFormat(getIntlLocale()).format(num);
+}
+
+/**
+ * Format number to compact notation (1K, 1M, etc) - locale-aware
  */
 export function formatCompactNumber(num: number): string {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat(getIntlLocale(), {
     notation: 'compact',
     compactDisplay: 'short',
   }).format(num);
 }
 
 /**
- * Format percentage
+ * Format percentage (locale-aware decimal separator)
  */
 export function formatPercentage(num: number, decimals: number = 1): string {
-  return `${num.toFixed(decimals)}%`;
+  return `${new Intl.NumberFormat(getIntlLocale(), {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(num)}%`;
 }
 
 /**
- * Format date to readable string
+ * Format a date with Intl.DateTimeFormat for the active app language
+ */
+export function formatLocaleDate(
+  date: Date | string | null | undefined,
+  options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat(getIntlLocale(), options).format(dateObj);
+}
+
+/**
+ * Format date to readable string (locale-aware)
  */
 export function formatDate(date: Date | string, formatStr: string = 'dd MMM yyyy'): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return format(dateObj, formatStr);
+  return format(dateObj, formatStr, { locale: getDateFnsLocale() });
 }
 
 /**
- * Format date to relative time (e.g., "2 hours ago")
+ * Format date to relative time (e.g., "2 hours ago" / "2 jam yang lalu")
  */
 export function formatRelativeTime(date: Date | string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return formatDistanceToNow(dateObj, { addSuffix: true });
+  return formatDistanceToNow(dateObj, { addSuffix: true, locale: getDateFnsLocale() });
 }
 
 /**
- * Format datetime
+ * Format datetime (locale-aware)
  */
 export function formatDateTime(date: Date | string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return format(dateObj, 'dd MMM yyyy, HH:mm');
+  return format(dateObj, 'dd MMM yyyy, HH:mm', { locale: getDateFnsLocale() });
 }
 
 /**
