@@ -84,3 +84,5 @@ secrets/
 cookies.txt
 *.session
 instagram_session
+facebook_cookies.txt
+facebook_state.json

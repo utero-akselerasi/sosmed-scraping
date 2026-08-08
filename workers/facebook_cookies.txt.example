@@ -1,0 +1,25 @@
+# Facebook Cookies - Netscape Format
+# ============================================================
+# SALIN file ini menjadi `facebook_cookies.txt` lalu tempel isi cookie
+# yang Anda ekspor dari browser.
+#
+# CARA EKSPOR (tanpa password - hanya sesi):
+# 1. Login ke facebook.com di browser Anda.
+# 2. Gunakan ekstensi "Get cookies.txt LOCALLY" (atau sejenisnya)
+#    dan ekspor cookies untuk domain .facebook.com dalam format Netscape.
+# 3. Tempel seluruh isinya ke workers/facebook_cookies.txt
+#    (GANTI file ini, jangan diedit di file .example).
+#
+# FORMAT (dipisahkan tab, 7 kolom):
+#   domain  includeSubdomains  path  secure  expires  name  value
+#
+# Contoh baris (bukan cookie asli):
+# .facebook.com	TRUE	/	TRUE	1817695870	datr	ISI_NILAI_COOKIE_ANDA
+# .facebook.com	TRUE	/	TRUE	1817617685	c_user	ISI_NILAI_COOKIE_ANDA
+# .facebook.com	TRUE	/	TRUE	1817617685	xs	ISI_NILAI_COOKIE_ANDA
+#
+# COOKIE PENTING (wajib ada agar sesi dianggap login):
+#   c_user  -> ID akun yang login
+#   xs      -> token sesi
+#
+# Jangan commit facebook_cookies.txt ke git (sudah di .gitignore).

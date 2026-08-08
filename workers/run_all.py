@@ -18,6 +18,7 @@ sys.path.append(os.path.dirname(__file__))
 from instagram.worker import InstagramWorker
 from tiktok.worker import TikTokWorker
 from website.scraper import WebsiteScraper
+from facebook.worker import FacebookWorker
 
 
 class WorkerOrchestrator:
@@ -27,6 +28,7 @@ class WorkerOrchestrator:
         self.instagram_worker = InstagramWorker()
         self.tiktok_worker = TikTokWorker()
         self.website_scraper = WebsiteScraper()
+        self.facebook_worker = FacebookWorker()
     
     async def run_all_sequential(self):
         """Run all workers sequentially"""
@@ -39,6 +41,7 @@ class WorkerOrchestrator:
             'instagram': {'status': 'pending', 'error': None},
             'tiktok': {'status': 'pending', 'error': None},
             'website': {'status': 'pending', 'error': None},
+            'facebook': {'status': 'pending', 'error': None},
         }
         
         # Run Instagram worker
@@ -79,6 +82,19 @@ class WorkerOrchestrator:
             logger.error(f"✗ Website Scraper failed: {e}")
             results['website']['status'] = 'failed'
             results['website']['error'] = str(e)
+        
+        # Run Facebook worker
+        try:
+            logger.info("\n🔵 Starting Facebook Worker...")
+            await self.facebook_worker.initialize()
+            await self.facebook_worker.run()
+            await self.facebook_worker.close()
+            results['facebook']['status'] = 'completed'
+            logger.info("✓ Facebook Worker completed")
+        except Exception as e:
+            logger.error(f"✗ Facebook Worker failed: {e}")
+            results['facebook']['status'] = 'failed'
+            results['facebook']['error'] = str(e)
         
         # Summary
         logger.info("\n" + "=" * 70)
@@ -123,11 +139,13 @@ class WorkerOrchestrator:
         instagram_task = asyncio.create_task(run_worker(self.instagram_worker, 'Instagram'))
         tiktok_task = asyncio.create_task(run_worker(self.tiktok_worker, 'TikTok'))
         website_task = asyncio.create_task(run_worker(self.website_scraper, 'Website'))
+        facebook_task = asyncio.create_task(run_worker(self.facebook_worker, 'Facebook'))
         
         results = await asyncio.gather(
             instagram_task,
             tiktok_task,
             website_task,
+            facebook_task,
             return_exceptions=True
         )
         
@@ -135,6 +153,7 @@ class WorkerOrchestrator:
             'instagram': results[0] if not isinstance(results[0], Exception) else {'status': 'failed', 'error': str(results[0])},
             'tiktok': results[1] if not isinstance(results[1], Exception) else {'status': 'failed', 'error': str(results[1])},
             'website': results[2] if not isinstance(results[2], Exception) else {'status': 'failed', 'error': str(results[2])},
+            'facebook': results[3] if not isinstance(results[3], Exception) else {'status': 'failed', 'error': str(results[3])},
         }
         
         # Summary

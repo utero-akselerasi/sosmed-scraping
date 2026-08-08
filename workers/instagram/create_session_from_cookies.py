@@ -20,6 +20,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# Parser Netscape dipakai bersama: shared/cookies.py
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from shared.cookies import parse_netscape_cookies
+
 load_dotenv()
 
 WORKERS_DIR = Path(__file__).resolve().parent.parent
@@ -33,31 +37,6 @@ if not COOKIES_FILE.is_absolute():
 SESSION_FILE = Path(os.getenv("INSTAGRAM_SESSION_FILE", "instagram_session"))
 if not SESSION_FILE.is_absolute():
     SESSION_FILE = WORKERS_DIR / SESSION_FILE
-
-
-def parse_netscape_cookies(path: Path):
-    cookies = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split("\t")
-            if len(parts) != 7:
-                print(f"WARNING: skip baris tidak valid: {line[:80]}")
-                continue
-            domain, _sub, path_str, secure_str, expires_str, name, value = parts
-            cookies.append(
-                {
-                    "domain": domain,
-                    "path": path_str,
-                    "secure": secure_str.upper() == "TRUE",
-                    "expires": int(expires_str) if expires_str.isdigit() else 0,
-                    "name": name,
-                    "value": value,
-                }
-            )
-    return cookies
 
 
 def main() -> None:

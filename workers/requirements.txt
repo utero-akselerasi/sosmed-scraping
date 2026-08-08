@@ -16,14 +16,14 @@ redis==5.0.1
 # Web Scraping
 beautifulsoup4==4.12.2
 lxml==5.0.0
+# Browser automation (Facebook worker + resolusi Google News website scraper)
+playwright>=1.40.0
 
 # Instagram
 instaloader>=4.13
 
 # TikTok
 TikTokApi>=6.3.0
-# playwright is optional (TikTok worker uses aiohttp; install separately if needed)
-# playwright==1.40.0
 
 # Sentiment Analysis
 textblob==0.17.1
