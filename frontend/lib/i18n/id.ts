@@ -246,6 +246,10 @@ export const id: Record<keyof typeof import('./en').en, string> = {
   'platforms.activePlatforms': 'Platform Aktif',
   'platforms.avgEngagementScore': 'Skor Interaksi Rata-rata',
   'platforms.sentimentDistribution': 'Distribusi Sentimen',
+  'platforms.x': 'X',
+  'platforms.xPosts': 'Postingan X',
+  'platforms.xScraping': 'Scraping X',
+  'platforms.xStatus': 'Status API X',
 
   // Keywords page
   'keywords.management': 'Manajemen Kata Kunci',

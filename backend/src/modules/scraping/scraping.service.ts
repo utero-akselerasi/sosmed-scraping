@@ -1,13 +1,10 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { spawn, ChildProcess } from "child_process";
 import * as path from "path";
+import { Interval } from "@nestjs/schedule";
 import {
   ScrapingJob,
   CollectionStatus,
@@ -22,6 +19,7 @@ export class ScrapingService implements OnModuleInit {
 
   private busy = false;
   private currentChild: ChildProcess | null = null;
+  private lastAutoRunAt = 0;
 
   constructor(
     @InjectRepository(ScrapingJob)
@@ -53,9 +51,45 @@ export class ScrapingService implements OnModuleInit {
 
   private get staleTimeoutMs(): number {
     return (
-      this.configService.get<number>("workers.staleTimeout") ||
-      30 * 60 * 1000
+      this.configService.get<number>("workers.staleTimeout") || 30 * 60 * 1000
     );
+  }
+
+  private get autoRefreshIntervalMs(): number {
+    return this.configService.get<number>("workers.interval") || 0;
+  }
+
+  /**
+   * Auto-refresh / scheduled scraping: jalankan seluruh worker (Instagram,
+   * Website, Facebook, TikTok, X) secara periodik. Interval dari env
+   * WORKER_INTERVAL (ms). Nilai 0 / tidak diatur = nonaktif.
+   * Keyword selalu dibaca ulang dari database oleh worker pada setiap
+   * siklus, sehingga perubahan keyword langsung dipakai tanpa restart.
+   */
+  @Interval("auto-scraping", 60_000)
+  async handleAutoScraping(): Promise<void> {
+    const interval = this.autoRefreshIntervalMs;
+    if (interval <= 0) {
+      return;
+    }
+    const now = Date.now();
+    if (now - this.lastAutoRunAt < interval) {
+      return;
+    }
+    try {
+      if (await this.isBusy()) {
+        return;
+      }
+      const result = await this.trigger();
+      if (result === "started") {
+        this.lastAutoRunAt = now;
+        this.logger.log(`Auto-scraping cycle dimulai (interval ${interval}ms)`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Auto-scraping cycle gagal: ${error instanceof Error ? error.message : error}`,
+      );
+    }
   }
 
   /**
@@ -124,12 +158,12 @@ export class ScrapingService implements OnModuleInit {
    * Spawn worker Python sebagai proses detached.
    * Backend tidak menunggu worker selesai.
    *
-   * SEMENTARA (fase pengembangan Website Scraper): hanya memanggil
-   * website/scraper.py, BUKAN run_all.py. Kembalikan ke run_all.py
-   * setelah Website Scraper benar-benar selesai.
+   * Menjalankan run_all.py (orchestrator) sehingga semua platform
+   * (Instagram, Website, Facebook, TikTok, X) dijalankan sekaligus.
+   * Mode paralel/sequential dikendalikan env WORKER_MODE di workers/.env.
    */
   spawnWorker(): ChildProcess {
-    const script = "website/scraper.py";
+    const script = "run_all.py";
     const child = spawn(this.pythonCmd, [script], {
       cwd: this.workersDir,
       detached: true,

@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
-import { formatNumber, formatCompactNumber, getPlatformColor } from '@/lib/format';
+import { formatNumber, formatCompactNumber, getPlatformColor, getPlatformLabel } from '@/lib/format';
 import { Globe, TrendingUp, FileText, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -75,7 +75,7 @@ export default function PlatformsPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-card-foreground">
-                      {platform.platformName}
+                      {getPlatformLabel(platform.platformType, platform.platformName)}
                     </h3>
                     <p className="text-sm text-muted-foreground capitalize">
                       {platform.platformType}

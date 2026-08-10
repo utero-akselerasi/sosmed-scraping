@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { X, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, Calendar, User, MapPin } from 'lucide-react';
 import { Post } from '@/types';
-import { formatNumber, formatRelativeTime, formatDateTime, getSentimentColor, getPlatformColor } from '@/lib/format';
+import { formatNumber, formatRelativeTime, formatDateTime, getSentimentColor, getPlatformColor, getPlatformLabel } from '@/lib/format';
 import { SentimentType } from '@/types';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -76,7 +76,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
           {/* Platform & Sentiment Badges */}
           <div className="mb-4 flex items-center space-x-2">
             <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getPlatformColor(post.platformName || ''))}>
-              {post.platformName}
+              {getPlatformLabel(post.platformType, post.platformName)}
             </span>
             <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getSentimentColor(post.sentiment as SentimentType))}>
               {post.sentiment}

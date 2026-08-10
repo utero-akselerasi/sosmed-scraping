@@ -1,6 +1,6 @@
 ﻿import { format, formatDistanceToNow, type Locale } from 'date-fns';
 import { enUS, id as idLocale } from 'date-fns/locale';
-import { getLanguage } from '@/lib/i18n';
+import { getLanguage, translate } from '@/lib/i18n';
 
 /**
  * Locale code used by Intl APIs for the active app language.
@@ -116,6 +116,25 @@ export function getPlatformColor(platform: string): string {
     default:
       return 'bg-muted text-muted-foreground';
   }
+}
+
+/**
+ * Get localized platform display label.
+ * X/Twitter uses the i18n label ('platforms.x'); other platforms fall back
+ * to the database name (e.g. "Instagram", "Facebook") so nothing else changes.
+ */
+export function getPlatformLabel(
+  platformType?: string | null,
+  fallbackName?: string | null
+): string {
+  if (platformType) {
+    switch (platformType.toLowerCase()) {
+      case 'twitter':
+      case 'x':
+        return translate('platforms.x');
+    }
+  }
+  return fallbackName || platformType || '';
 }
 
 /**

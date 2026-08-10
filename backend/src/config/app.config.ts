@@ -46,7 +46,7 @@ export default () => ({
   },
 
   workers: {
-    interval: parseInt(process.env.WORKER_INTERVAL, 10) || 900000,
+    interval: parseInt(process.env.WORKER_INTERVAL, 10) || 0,
     batchSize: parseInt(process.env.WORKER_BATCH_SIZE, 10) || 100,
     maxRetries: parseInt(process.env.WORKER_MAX_RETRIES, 10) || 3,
     dir: process.env.WORKERS_DIR || path.resolve(process.cwd(), "../workers"),
@@ -64,6 +64,9 @@ export default () => ({
     website: {
       enabled: process.env.WEBSITE_ENABLED === "true",
       urls: process.env.WEBSITE_URLS?.split(",") || [],
+    },
+    twitter: {
+      enabled: process.env.TWITTER_ENABLED === "true",
     },
   },
 
