@@ -146,12 +146,15 @@ class DatabaseManager:
     async def update_scraping_job(self, job_id: str, status: str, 
                                    posts_collected: int = 0, 
                                    errors_count: int = 0,
-                                   error_message: str = None):
-        """Update scraping job status"""
+                                   error_message: str = None,
+                                   metadata: Optional[Dict[str, Any]] = None):
+        """Update scraping job status (metadata optional, mis. biaya Apify)"""
         async with self.pool.acquire() as conn:
             await conn.execute("""
                 UPDATE scraping_jobs
                 SET status = $1, completed_at = CURRENT_TIMESTAMP,
-                    posts_collected = $2, errors_count = $3, error_message = $4
-                WHERE id = $5
-            """, status, posts_collected, errors_count, error_message, job_id)
+                    posts_collected = $2, errors_count = $3, error_message = $4,
+                    metadata = COALESCE($5::jsonb, metadata)
+                WHERE id = $6
+            """, status, posts_collected, errors_count, error_message,
+                json.dumps(metadata) if metadata else None, job_id)

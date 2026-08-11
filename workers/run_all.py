@@ -22,6 +22,19 @@ from facebook.worker import FacebookWorker
 from twitter.worker import TwitterWorker
 
 
+def tiktok_auto_enabled() -> bool:
+    """Gate otomatis TikTok: TIKTOK_ENABLED=true DAN TIKTOK_AUTO_SCRAPE=true.
+
+    TIKTOK_AUTO_SCRAPE=false (default) membuat run_all.py (jalur scheduler
+    otomatis) TIDAK menjalankan TikTok, sehingga kredit Apify tidak
+    terpakai berulang. Worker tetap bisa dijalankan manual:
+    `venv\\Scripts\\python -m tiktok.worker`.
+    """
+    enabled = os.getenv('TIKTOK_ENABLED', 'true').strip().lower() == 'true'
+    auto = os.getenv('TIKTOK_AUTO_SCRAPE', 'false').strip().lower() == 'true'
+    return enabled and auto
+
+
 class WorkerOrchestrator:
     """Orchestrates all workers"""
     
@@ -60,18 +73,25 @@ class WorkerOrchestrator:
             results['instagram']['status'] = 'failed'
             results['instagram']['error'] = str(e)
         
-        # Run TikTok worker
-        try:
-            logger.info("\n🔵 Starting TikTok Worker...")
-            await self.tiktok_worker.initialize()
-            await self.tiktok_worker.run()
-            await self.tiktok_worker.close()
-            results['tiktok']['status'] = 'completed'
-            logger.info("✓ TikTok Worker completed")
-        except Exception as e:
-            logger.error(f"✗ TikTok Worker failed: {e}")
-            results['tiktok']['status'] = 'failed'
-            results['tiktok']['error'] = str(e)
+        # Run TikTok worker (hanya jika TIKTOK_ENABLED + TIKTOK_AUTO_SCRAPE)
+        if not tiktok_auto_enabled():
+            logger.info(
+                "\n⏭  Skipping TikTok Worker (TIKTOK_AUTO_SCRAPE=false atau "
+                "TIKTOK_ENABLED=false)"
+            )
+            results['tiktok']['status'] = 'skipped'
+        else:
+            try:
+                logger.info("\n🔵 Starting TikTok Worker...")
+                await self.tiktok_worker.initialize()
+                await self.tiktok_worker.run()
+                await self.tiktok_worker.close()
+                results['tiktok']['status'] = 'completed'
+                logger.info("✓ TikTok Worker completed")
+            except Exception as e:
+                logger.error(f"✗ TikTok Worker failed: {e}")
+                results['tiktok']['status'] = 'failed'
+                results['tiktok']['error'] = str(e)
         
         # Run Website scraper
         try:
@@ -151,29 +171,45 @@ class WorkerOrchestrator:
                 logger.error(f"✗ {name} Worker failed: {e}")
                 return {'status': 'failed', 'error': str(e)}
         
-        # Run all workers in parallel
-        instagram_task = asyncio.create_task(run_worker(self.instagram_worker, 'Instagram'))
-        tiktok_task = asyncio.create_task(run_worker(self.tiktok_worker, 'TikTok'))
-        website_task = asyncio.create_task(run_worker(self.website_scraper, 'Website'))
-        facebook_task = asyncio.create_task(run_worker(self.facebook_worker, 'Facebook'))
-        twitter_task = asyncio.create_task(run_worker(self.twitter_worker, 'X (Twitter)'))
-        
+        # Run all workers in parallel (TikTok opsional - gated)
+        instagram_task = asyncio.create_task(
+            run_worker(self.instagram_worker, 'Instagram'))
+        website_task = asyncio.create_task(
+            run_worker(self.website_scraper, 'Website'))
+        facebook_task = asyncio.create_task(
+            run_worker(self.facebook_worker, 'Facebook'))
+        twitter_task = asyncio.create_task(
+            run_worker(self.twitter_worker, 'X (Twitter)'))
+        task_map = [
+            ('instagram', instagram_task),
+            ('website', website_task),
+            ('facebook', facebook_task),
+            ('twitter', twitter_task),
+        ]
+        if tiktok_auto_enabled():
+            tiktok_task = asyncio.create_task(
+                run_worker(self.tiktok_worker, 'TikTok'))
+            task_map.insert(1, ('tiktok', tiktok_task))
+        else:
+            logger.info(
+                "\n⏭  Skipping TikTok Worker (TIKTOK_AUTO_SCRAPE=false atau "
+                "TIKTOK_ENABLED=false)"
+            )
+            tiktok_task = None
+
         results = await asyncio.gather(
-            instagram_task,
-            tiktok_task,
-            website_task,
-            facebook_task,
-            twitter_task,
+            *[t for _, t in task_map],
             return_exceptions=True
         )
-        
-        results_dict = {
-            'instagram': results[0] if not isinstance(results[0], Exception) else {'status': 'failed', 'error': str(results[0])},
-            'tiktok': results[1] if not isinstance(results[1], Exception) else {'status': 'failed', 'error': str(results[1])},
-            'website': results[2] if not isinstance(results[2], Exception) else {'status': 'failed', 'error': str(results[2])},
-            'facebook': results[3] if not isinstance(results[3], Exception) else {'status': 'failed', 'error': str(results[3])},
-            'twitter': results[4] if not isinstance(results[4], Exception) else {'status': 'failed', 'error': str(results[4])},
-        }
+
+        results_dict = {}
+        for (name, _), result in zip(task_map, results):
+            results_dict[name] = (
+                result if not isinstance(result, Exception)
+                else {'status': 'failed', 'error': str(result)}
+            )
+        if tiktok_task is None:
+            results_dict['tiktok'] = {'status': 'skipped', 'error': None}
         
         # Summary
         logger.info("\n" + "=" * 70)
