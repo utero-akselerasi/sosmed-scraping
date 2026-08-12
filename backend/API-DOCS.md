@@ -415,6 +415,68 @@ Response:
 
 ---
 
+### 🕷️ Scraping (`/scraping`)
+
+#### Trigger Manual Scraping (Website Scraper)
+```http
+POST /scraping/run
+Authorization: Bearer <token>
+
+Response (202):
+{
+  "message": "Scraping dimulai.",
+  "accepted": true
+}
+```
+- `409` - Masih ada proses scraping yang sedang berjalan (busy)
+
+#### Trigger Manual Scraping Threads (terisolasi)
+```http
+POST /scraping/run/threads
+Authorization: Bearer <token>
+
+Response (202):
+{
+  "message": "Scraping Threads dimulai.",
+  "accepted": true
+}
+```
+- `400` - Threads worker disabled (`THREADS_ENABLED=false`)
+- `409` - Masih ada proses scraping yang sedang berjalan (busy)
+- Hanya menjalankan `workers/threads/worker.py`; tidak menyentuh worker lain.
+- Dijadwalkan otomatis tiap 6 jam via `@Cron` (`0 0 */6 * * *`) jika
+  `THREADS_ENABLED=true`.
+
+#### Get Scraping Status
+```http
+GET /scraping/status
+Authorization: Bearer <token>
+
+Response:
+{
+  "busy": false,
+  "jobs": [
+    {
+      "id": "uuid",
+      "platformId": "uuid",
+      "platformName": "Threads",
+      "platformType": "threads",
+      "status": "completed",
+      "startedAt": "2026-07-24T10:00:00Z",
+      "completedAt": "2026-07-24T10:05:00Z",
+      "durationSeconds": 300,
+      "postsInDatabase": 42,
+      "postsCollected": 45,
+      "errorsCount": 3,
+      "errorMessage": null
+    }
+  ]
+}
+```
+- Job terbaru per platform; `postsInDatabase` = jumlah post asli di tabel `posts`.
+
+---
+
 ## 📋 Query Parameters
 
 ### Posts Filters
@@ -479,7 +541,7 @@ http://localhost:4000/api/v1/docs
 
 ---
 
-## 📊 Total Endpoints: 27
+## 📊 Total Endpoints: 30
 
 ### By Module:
 - Authentication: 4 endpoints
@@ -487,9 +549,10 @@ http://localhost:4000/api/v1/docs
 - Platforms: 5 endpoints
 - Influencers: 4 endpoints
 - Analytics: 5 endpoints
+- Scraping: 3 endpoints
 
 ---
 
-**Last Updated:** July 25, 2026  
+**Last Updated:** August 11, 2026  
 **API Version:** 1.0  
 **Status:** Ready for Testing
