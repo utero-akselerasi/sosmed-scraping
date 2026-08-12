@@ -19,6 +19,7 @@ from instagram.worker import InstagramWorker
 from tiktok.worker import TikTokWorker
 from website.scraper import WebsiteScraper
 from facebook.worker import FacebookWorker
+from threads.worker import ThreadsWorker
 
 
 class WorkerOrchestrator:
@@ -29,6 +30,28 @@ class WorkerOrchestrator:
         self.tiktok_worker = TikTokWorker()
         self.website_scraper = WebsiteScraper()
         self.facebook_worker = FacebookWorker()
+        self.threads_worker = ThreadsWorker()
+
+    async def run_threads_if_enabled(self):
+        """Run Threads worker hanya jika THREADS_ENABLED=true (default false).
+
+        Guard terpisah agar Threads tidak pernah melakukan request API
+        tanpa konfigurasi eksplisit. Mengembalikan dict hasil.
+        """
+        if os.getenv('THREADS_ENABLED', 'false').lower() != 'true':
+            logger.warning("⏭  Threads Worker SKIP (THREADS_ENABLED=false)")
+            return {'status': 'skipped', 'error': None}
+
+        try:
+            logger.info("\n🔵 Starting Threads Worker...")
+            await self.threads_worker.initialize()
+            await self.threads_worker.run()
+            await self.threads_worker.close()
+            logger.info("✓ Threads Worker completed")
+            return {'status': 'completed', 'error': None}
+        except Exception as e:
+            logger.error(f"✗ Threads Worker failed: {e}")
+            return {'status': 'failed', 'error': str(e)}
     
     async def run_all_sequential(self):
         """Run all workers sequentially"""
@@ -42,6 +65,7 @@ class WorkerOrchestrator:
             'tiktok': {'status': 'pending', 'error': None},
             'website': {'status': 'pending', 'error': None},
             'facebook': {'status': 'pending', 'error': None},
+            'threads': {'status': 'pending', 'error': None},
         }
         
         # Run Instagram worker
@@ -96,6 +120,9 @@ class WorkerOrchestrator:
             results['facebook']['status'] = 'failed'
             results['facebook']['error'] = str(e)
         
+        # Run Threads worker (hanya jika THREADS_ENABLED=true)
+        results['threads'] = await self.run_threads_if_enabled()
+
         # Summary
         logger.info("\n" + "=" * 70)
         logger.info("WORKER ORCHESTRATOR - Summary")
@@ -105,7 +132,12 @@ class WorkerOrchestrator:
         failed = sum(1 for r in results.values() if r['status'] == 'failed')
         
         for worker_name, result in results.items():
-            status_emoji = "✓" if result['status'] == 'completed' else "✗"
+            if result['status'] == 'completed':
+                status_emoji = "✓"
+            elif result['status'] == 'skipped':
+                status_emoji = "⏭"
+            else:
+                status_emoji = "✗"
             logger.info(f"{status_emoji} {worker_name.capitalize()}: {result['status']}")
             if result['error']:
                 logger.error(f"  Error: {result['error']}")
@@ -141,11 +173,16 @@ class WorkerOrchestrator:
         website_task = asyncio.create_task(run_worker(self.website_scraper, 'Website'))
         facebook_task = asyncio.create_task(run_worker(self.facebook_worker, 'Facebook'))
         
+        tasks = [instagram_task, tiktok_task, website_task, facebook_task]
+        threads_task = None
+        if os.getenv('THREADS_ENABLED', 'false').lower() == 'true':
+            threads_task = asyncio.create_task(run_worker(self.threads_worker, 'Threads'))
+            tasks.append(threads_task)
+        else:
+            logger.warning("⏭  Threads Worker SKIP (THREADS_ENABLED=false)")
+
         results = await asyncio.gather(
-            instagram_task,
-            tiktok_task,
-            website_task,
-            facebook_task,
+            *tasks,
             return_exceptions=True
         )
         
@@ -155,6 +192,15 @@ class WorkerOrchestrator:
             'website': results[2] if not isinstance(results[2], Exception) else {'status': 'failed', 'error': str(results[2])},
             'facebook': results[3] if not isinstance(results[3], Exception) else {'status': 'failed', 'error': str(results[3])},
         }
+        if threads_task is not None:
+            threads_result = results[4]
+            results_dict['threads'] = (
+                threads_result
+                if not isinstance(threads_result, Exception)
+                else {'status': 'failed', 'error': str(threads_result)}
+            )
+        else:
+            results_dict['threads'] = {'status': 'skipped', 'error': None}
         
         # Summary
         logger.info("\n" + "=" * 70)
@@ -165,7 +211,12 @@ class WorkerOrchestrator:
         failed = sum(1 for r in results_dict.values() if r['status'] == 'failed')
         
         for worker_name, result in results_dict.items():
-            status_emoji = "✓" if result['status'] == 'completed' else "✗"
+            if result['status'] == 'completed':
+                status_emoji = "✓"
+            elif result['status'] == 'skipped':
+                status_emoji = "⏭"
+            else:
+                status_emoji = "✗"
             logger.info(f"{status_emoji} {worker_name.capitalize()}: {result['status']}")
             if result['error']:
                 logger.error(f"  Error: {result['error']}")
