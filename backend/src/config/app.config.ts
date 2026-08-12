@@ -65,6 +65,10 @@ export default () => ({
       enabled: process.env.WEBSITE_ENABLED === "true",
       urls: process.env.WEBSITE_URLS?.split(",") || [],
     },
+    threads: {
+      enabled: process.env.THREADS_ENABLED === "true",
+      sessionDir: process.env.THREADS_SESSION_DIR,
+    },
   },
 
   sentiment: {
