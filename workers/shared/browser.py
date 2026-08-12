@@ -24,12 +24,14 @@ class PlaywrightManager:
         args: Optional[list] = None,
         user_agent: Optional[str] = None,
         locale: Optional[str] = None,
+        slow_mo: int = 0,
     ):
         self.headless = headless
         self.timeout_ms = timeout_ms
         self.args = args if args is not None else ["--no-sandbox"]
         self.user_agent = user_agent
         self.locale = locale
+        self.slow_mo = slow_mo
         self._playwright: Any = None
         self._browser: Any = None
 
@@ -53,8 +55,12 @@ class PlaywrightManager:
         self._browser = await self._playwright.chromium.launch(
             headless=self.headless,
             args=self.args,
+            slow_mo=self.slow_mo,
         )
-        logger.debug(f"Playwright Chromium launched (headless={self.headless})")
+        logger.debug(
+            f"Playwright Chromium launched (headless={self.headless}, "
+            f"slow_mo={self.slow_mo})"
+        )
 
     async def ensure_running(self) -> None:
         """Relaunch browser jika proses crash / terputus."""
