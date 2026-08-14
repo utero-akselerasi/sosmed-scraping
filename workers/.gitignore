@@ -4,3 +4,10 @@ facebook_cookies.txt
 facebook_state.json
 .env
 backups/
+
+# Threads sessions (NEVER commit cookies / storage state)
+data/sessions/
+*.cookies.txt
+*.cookie
+*.storage.json
+playwright/.auth/

@@ -170,6 +170,11 @@ class ApiClient {
     return response.data;
   }
 
+  async triggerThreadsScraping() {
+    const response = await this.client.post('/scraping/run/threads');
+    return response.data;
+  }
+
   async getScrapingStatus() {
     const response = await this.client.get('/scraping/status');
     return response.data;

@@ -89,3 +89,10 @@ facebook_state.json
 x.com_cookies.txt
 twitter_cookies.txt
 twitter_state.json
+
+# Threads sessions (NEVER commit cookies / storage state)
+data/sessions/
+*.cookies.txt
+*.cookie
+*.storage.json
+playwright/.auth/

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   ConflictException,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -48,5 +49,34 @@ export class ScrapingController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async status() {
     return this.scrapingService.getStatus();
+  }
+
+  @Post("run/threads")
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary:
+      "Trigger manual Threads scraping run (terisolasi - hanya threads/worker.py)",
+  })
+  @ApiResponse({ status: 202, description: "Scraping Threads dimulai" })
+  @ApiResponse({
+    status: 400,
+    description: "Threads worker disabled (THREADS_ENABLED=false)",
+  })
+  @ApiResponse({ status: 409, description: "Masih ada scraping berjalan" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async runThreads() {
+    const result = await this.scrapingService.triggerThreads();
+    if (result === "disabled") {
+      throw new BadRequestException(
+        "Threads worker disabled (THREADS_ENABLED=false).",
+      );
+    }
+    if (result === "busy") {
+      throw new ConflictException(
+        "Masih ada proses scraping yang sedang berjalan.",
+      );
+    }
+    return { message: "Scraping Threads dimulai.", accepted: true };
   }
 }

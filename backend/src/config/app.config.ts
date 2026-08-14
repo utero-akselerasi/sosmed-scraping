@@ -68,6 +68,10 @@ export default () => ({
     twitter: {
       enabled: process.env.TWITTER_ENABLED === "true",
     },
+    threads: {
+      enabled: process.env.THREADS_ENABLED === "true",
+      sessionDir: process.env.THREADS_SESSION_DIR,
+    },
   },
 
   sentiment: {

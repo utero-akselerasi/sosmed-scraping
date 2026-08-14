@@ -20,6 +20,7 @@ from tiktok.worker import TikTokWorker
 from website.scraper import WebsiteScraper
 from facebook.worker import FacebookWorker
 from twitter.worker import TwitterWorker
+from threads.worker import ThreadsWorker
 
 
 def tiktok_auto_enabled() -> bool:
@@ -44,6 +45,28 @@ class WorkerOrchestrator:
         self.website_scraper = WebsiteScraper()
         self.facebook_worker = FacebookWorker()
         self.twitter_worker = TwitterWorker()
+        self.threads_worker = ThreadsWorker()
+
+    async def run_threads_if_enabled(self):
+        """Run Threads worker hanya jika THREADS_ENABLED=true (default false).
+
+        Guard terpisah agar Threads tidak pernah membuka browser / membuat
+        scraping_job tanpa konfigurasi eksplisit. Mengembalikan dict hasil.
+        """
+        if os.getenv('THREADS_ENABLED', 'false').lower() != 'true':
+            logger.warning("⏭  Threads Worker SKIP (THREADS_ENABLED=false)")
+            return {'status': 'skipped', 'error': None}
+
+        try:
+            logger.info("\n🔵 Starting Threads Worker...")
+            await self.threads_worker.initialize()
+            await self.threads_worker.run()
+            await self.threads_worker.close()
+            logger.info("✓ Threads Worker completed")
+            return {'status': 'completed', 'error': None}
+        except Exception as e:
+            logger.error(f"✗ Threads Worker failed: {e}")
+            return {'status': 'failed', 'error': str(e)}
     
     async def run_all_sequential(self):
         """Run all workers sequentially"""
@@ -58,6 +81,7 @@ class WorkerOrchestrator:
             'website': {'status': 'pending', 'error': None},
             'facebook': {'status': 'pending', 'error': None},
             'twitter': {'status': 'pending', 'error': None},
+            'threads': {'status': 'pending', 'error': None},
         }
         
         # Run Instagram worker
@@ -132,6 +156,9 @@ class WorkerOrchestrator:
             results['twitter']['status'] = 'failed'
             results['twitter']['error'] = str(e)
         
+        # Run Threads worker (hanya jika THREADS_ENABLED=true)
+        results['threads'] = await self.run_threads_if_enabled()
+        
         # Summary
         logger.info("\n" + "=" * 70)
         logger.info("WORKER ORCHESTRATOR - Summary")
@@ -141,7 +168,12 @@ class WorkerOrchestrator:
         failed = sum(1 for r in results.values() if r['status'] == 'failed')
         
         for worker_name, result in results.items():
-            status_emoji = "✓" if result['status'] == 'completed' else "✗"
+            if result['status'] == 'completed':
+                status_emoji = "✓"
+            elif result['status'] == 'skipped':
+                status_emoji = "⏭"
+            else:
+                status_emoji = "✗"
             logger.info(f"{status_emoji} {worker_name.capitalize()}: {result['status']}")
             if result['error']:
                 logger.error(f"  Error: {result['error']}")
@@ -197,6 +229,15 @@ class WorkerOrchestrator:
             )
             tiktok_task = None
 
+        # Threads worker (opsional - gated oleh THREADS_ENABLED)
+        threads_task = None
+        if os.getenv('THREADS_ENABLED', 'false').lower() == 'true':
+            threads_task = asyncio.create_task(
+                run_worker(self.threads_worker, 'Threads'))
+            task_map.append(('threads', threads_task))
+        else:
+            logger.warning("⏭  Threads Worker SKIP (THREADS_ENABLED=false)")
+
         results = await asyncio.gather(
             *[t for _, t in task_map],
             return_exceptions=True
@@ -210,6 +251,8 @@ class WorkerOrchestrator:
             )
         if tiktok_task is None:
             results_dict['tiktok'] = {'status': 'skipped', 'error': None}
+        if threads_task is None:
+            results_dict['threads'] = {'status': 'skipped', 'error': None}
         
         # Summary
         logger.info("\n" + "=" * 70)
@@ -220,7 +263,12 @@ class WorkerOrchestrator:
         failed = sum(1 for r in results_dict.values() if r['status'] == 'failed')
         
         for worker_name, result in results_dict.items():
-            status_emoji = "✓" if result['status'] == 'completed' else "✗"
+            if result['status'] == 'completed':
+                status_emoji = "✓"
+            elif result['status'] == 'skipped':
+                status_emoji = "⏭"
+            else:
+                status_emoji = "✗"
             logger.info(f"{status_emoji} {worker_name.capitalize()}: {result['status']}")
             if result['error']:
                 logger.error(f"  Error: {result['error']}")

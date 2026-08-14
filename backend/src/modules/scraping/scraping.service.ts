@@ -4,14 +4,14 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { spawn, ChildProcess } from "child_process";
 import * as path from "path";
-import { Interval } from "@nestjs/schedule";
+import { Interval, Cron } from "@nestjs/schedule";
 import {
   ScrapingJob,
   CollectionStatus,
 } from "../../common/entities/scraping-job.entity";
 import { Post } from "../../common/entities/post.entity";
 
-export type TriggerResult = "started" | "busy";
+export type TriggerResult = "started" | "busy" | "disabled";
 
 @Injectable()
 export class ScrapingService implements OnModuleInit {
@@ -35,6 +35,26 @@ export class ScrapingService implements OnModuleInit {
       this.logger.warn(
         `Recovery: ${recovered} scraping job(s) stale ditandai sebagai failed`,
       );
+    }
+  }
+
+  /**
+   * Jadwal otomatis scraping Threads (default: setiap 6 jam).
+   * Hanya aktif jika THREADS_ENABLED=true.
+   */
+  @Cron("0 0 */6 * * *", { name: "threads-scheduled-run" })
+  async handleScheduledThreadsRun(): Promise<void> {
+    const enabled =
+      this.configService.get<boolean>("workers.threads.enabled") ?? false;
+    if (!enabled) {
+      return;
+    }
+
+    const result = await this.triggerThreads();
+    if (result === "started") {
+      this.logger.log("Scheduled Threads scraping started");
+    } else if (result === "busy") {
+      this.logger.warn("Scheduled Threads scraping skipped: busy");
     }
   }
 
@@ -155,15 +175,46 @@ export class ScrapingService implements OnModuleInit {
   }
 
   /**
+   * Trigger scraping Threads manual - TERISOLASI dari POST /scraping/run.
+   * Hanya menjalankan workers/threads/worker.py.
+   *
+   * Menghormati THREADS_ENABLED (default false): jika dinonaktifkan, tidak
+   * ada worker yang di-spawn dan tidak ada request API yang dibuat.
+   */
+  async triggerThreads(): Promise<TriggerResult> {
+    const enabled =
+      this.configService.get<boolean>("workers.threads.enabled") ?? false;
+    if (!enabled) {
+      return "disabled";
+    }
+
+    await this.recoverStaleJobs();
+
+    if (await this.isBusy()) {
+      return "busy";
+    }
+
+    this.busy = true;
+    try {
+      this.spawnWorker("threads/worker.py");
+      return "started";
+    } catch (error) {
+      this.busy = false;
+      throw error;
+    }
+  }
+
+  /**
    * Spawn worker Python sebagai proses detached.
    * Backend tidak menunggu worker selesai.
    *
-   * Menjalankan run_all.py (orchestrator) sehingga semua platform
-   * (Instagram, Website, Facebook, TikTok, X) dijalankan sekaligus.
-   * Mode paralel/sequential dikendalikan env WORKER_MODE di workers/.env.
+   * `script` adalah path relatif terhadap workers dir; default tetap
+   * run_all.py (orchestrator) sehingga semua platform (Instagram, Website,
+   * Facebook, TikTok, X, Threads) dijalankan sekaligus. Mode
+   * paralel/sequential dikendalikan env WORKER_MODE di workers/.env.
+   * Endpoint /scraping/run/threads melewatkan "threads/worker.py".
    */
-  spawnWorker(): ChildProcess {
-    const script = "run_all.py";
+  spawnWorker(script: string = "run_all.py"): ChildProcess {
     const child = spawn(this.pythonCmd, [script], {
       cwd: this.workersDir,
       detached: true,
