@@ -79,14 +79,18 @@ class FacebookCookieManager:
     def validate_parsed(self, cookies: List[NetscapeCookie]) -> None:
         """Validasi cookie hasil parse: cek kehadiran sesi + kedaluwarsa.
 
-        Melempar FacebookCookieExpired / FacebookSessionInvalid dengan pesan
-        yang jelas tentang apa yang harus dilakukan user.
+        Hanya cookie sesi (c_user, xs) yang menjadi penanda login; cookie
+        lain (mis. dpr, wd) bersifat device/penunjang dan otomatis
+        diperbarui Facebook, sehingga kedaluwarsanya TIDAK membatalkan
+        sesi. Melempar FacebookCookieExpired / FacebookSessionInvalid
+        dengan pesan yang jelas tentang apa yang harus dilakukan user.
         """
-        expired = [c for c in cookies if c.is_expired]
+        session = [c for c in cookies if c.name in SESSION_COOKIE_NAMES]
+        expired = [c for c in session if c.is_expired]
         if expired:
             names = ", ".join(c.name for c in expired[:5])
             raise FacebookCookieExpired(
-                "Cookie Facebook KEDALUWARSA: "
+                "Cookie sesi Facebook KEDALUWARSA: "
                 f"{names}{'...' if len(expired) > 5 else ''} (periksa "
                 f"{self.cookies_file}).\n"
                 "Ekspor ulang cookie baru dari browser (login ke "

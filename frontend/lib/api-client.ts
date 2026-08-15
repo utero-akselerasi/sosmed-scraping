@@ -43,6 +43,23 @@ class ApiClient {
     );
   }
 
+  /** Extract a useful, human-readable message from any API error. */
+  public getErrorMessage(error: any, fallback: string): string {
+    if (error?.response?.data?.message) {
+      return error.response.data.message;
+    }
+    if (error?.response?.status) {
+      return `Server error (HTTP ${error.response.status}).`;
+    }
+    if (error?.code === 'ECONNABORTED') {
+      return 'Request timeout - backend is slow or unreachable.';
+    }
+    if (error?.request) {
+      return 'Cannot reach backend at ' + API_URL + '. Is the backend running?';
+    }
+    return fallback;
+  }
+
   private getToken(): string | null {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('accessToken');

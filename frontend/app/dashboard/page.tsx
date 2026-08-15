@@ -81,7 +81,7 @@ export default function DashboardPage() {
       if (error?.response?.status === 409) {
         toast.error(t('dashboard.scrapeBusy'));
       } else {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeFailed'));
+        toast.error(apiClient.getErrorMessage(error, t('dashboard.scrapeFailed')));
       }
     },
   });
@@ -100,7 +100,7 @@ export default function DashboardPage() {
       } else if (error?.response?.status === 400) {
         toast.error(error?.response?.data?.message || t('dashboard.scrapeThreadsDisabled'));
       } else {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeFailed'));
+        toast.error(apiClient.getErrorMessage(error, t('dashboard.scrapeFailed')));
       }
     },
   });
