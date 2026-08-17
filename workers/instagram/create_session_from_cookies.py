@@ -56,12 +56,12 @@ def main() -> None:
 
     for c in cookies:
         loader.context._session.cookies.set(
-            c["name"],
-            c["value"],
-            domain=c["domain"],
-            path=c["path"],
-            secure=c["secure"],
-            expires=c["expires"] if c["expires"] > 0 else None,
+            c.name,
+            c.value,
+            domain=c.domain,
+            path=c.path,
+            secure=c.secure,
+            expires=c.expires if c.expires > 0 else None,
         )
 
     username = None
