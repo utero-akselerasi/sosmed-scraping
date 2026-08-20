@@ -12,7 +12,9 @@ Hanya data REAL yang dikembalikan:
 Pengaman biaya (hard safety):
 - `maxChargePerRun` dikirim sebagai run option - Actor berhenti
   otomatis saat mencapai batas biaya per run.
-- `resultsPerPage` dibatasi oleh TIKTOK_MAX_POSTS_PER_KEYWORD.
+- `resultsPerPage` adalah pool kandidat; yang DISIMPAN dibatasi
+  TIKTOK_MAX_POSTS_PER_KEYWORD (dedup post ID terhadap database,
+  hanya post BARU yang di-save).
 - Semua opsi download (video/cover/avatar/music) = false.
 - Token Apify TIDAK PERNAH dicetak ke log / error message.
 """
@@ -258,11 +260,18 @@ class ApifyTikTokProvider:
 
         Keyword berawalan '#' -> hashtag scrape (lebih presisi).
         Keyword lain -> search query TikTok (hasil video publik).
+
+        `resultsPerPage` adalah KANDIDAT yang diambil dari Apify
+        (pool). Yang DISIMPAN tetap dibatasi TIKTOK_MAX_POSTS_PER_KEYWORD
+        oleh search_keyword (dedup + cap) - post yang sudah ada di
+        database dilewati sehingga run berikutnya tetap mendapat
+        post BARU.
         """
         limit = max(1, int(self.max_posts_per_keyword))
+        pool = max(limit, int(self.max_posts_per_keyword * 10))
 
         base: Dict[str, Any] = {
-            "resultsPerPage": limit,
+            "resultsPerPage": pool,
             "maxFollowersPerProfile": 0,
             "maxFollowingPerProfile": 0,
             "commentsPerPost": 0,
@@ -457,9 +466,17 @@ class ApifyTikTokProvider:
         return run
 
     async def wait_for_run(self, run_id: str) -> Dict[str, Any]:
-        """Polling status run hingga final atau timeout."""
+        """Polling status run hingga final atau timeout.
+
+        Penting: endpoint run detail Apify membungkus objek run di key
+        `data` ({"data": {...run...}}). Status HARUS dibaca dari level
+        itu, bukan dari level teratas. Begitu status final tercapai
+        (SUCCEEDED/FAILED/ABORTED/TIMED-OUT) fungsi langsung kembali -
+        TIDAK menunggu sampai timeout penuh.
+        """
         run_url = f"{APIFY_API_BASE}/actor-runs/{run_id}"
         deadline = asyncio.get_event_loop().time() + self.run_timeout_seconds + 60
+        last_status = ''
 
         while True:
             payload = await self._request_json('GET', run_url)
@@ -468,17 +485,41 @@ class ApifyTikTokProvider:
                     f"Respons run detail tidak valid ({run_id})"
                 )
 
-            status = payload.get('status') or ''
+            run_data = payload.get('data') or payload
+            if not isinstance(run_data, dict):
+                raise ApifyTikTokError(
+                    f"Respons run detail tidak valid ({run_id})"
+                )
+
+            status = run_data.get('status') or ''
             if status in FINAL_STATUSES:
-                self.run_costs.append(self.extract_run_cost(payload))
-                self._log_run_cost(payload)
-                return payload
+                self.run_costs.append(self.extract_run_cost(run_data))
+                self._log_run_cost(run_data)
+                if status == 'SUCCEEDED':
+                    logger.info(f"Apify run {run_id} selesai: SUCCEEDED")
+                else:
+                    reason = (
+                        run_data.get('statusMessage')
+                        or run_data.get('error')
+                        or 'tanpa pesan'
+                    )
+                    logger.error(
+                        f"Apify run {run_id} berakhir {status}: {reason}"
+                    )
+                return run_data
+
+            if status != last_status:
+                logger.info(
+                    f"Apify run {run_id} status: {status or 'unknown'} "
+                    f"(menunggu hasil...)"
+                )
+                last_status = status
 
             if asyncio.get_event_loop().time() > deadline:
-                self._log_run_cost(payload)
+                self._log_run_cost(run_data)
                 raise ApifyTikTokError(
                     f"Apify run {run_id} melewati batas waktu tunggu "
-                    f"(status terakhir: {status})"
+                    f"(status terakhir: {status or 'unknown'})"
                 )
 
             await asyncio.sleep(10)
@@ -593,7 +634,7 @@ class ApifyTikTokProvider:
             f"(run {run_id})"
         )
 
-        posts_data = []
+        candidates = []
         for item in items:
             try:
                 post_data = self.normalize_item(item, keyword, run_id)
@@ -605,13 +646,43 @@ class ApifyTikTokProvider:
                 continue
             if post_data is None:
                 continue
+            candidates.append(post_data)
+
+        # Dedup post ID: buang post yang SUDAH ADA di database sehingga
+        # setiap run hanya menyimpan post BARU. Guard final tetap
+        # unique index posts(platform_id, platform_post_id, posted_at).
+        existing_ids = set()
+        try:
+            existing_ids = await self.worker.db.get_existing_platform_post_ids(
+                self.worker.platform_id,
+                [p['platform_post_id'] for p in candidates],
+            )
+        except Exception as e:
+            logger.warning(f"Gagal memeriksa post lama di database: {e}")
+
+        posts_data = []
+        seen_ids: set = set()
+        for post in candidates:
+            post_id = post['platform_post_id']
+            if post_id in existing_ids or post_id in seen_ids:
+                continue
+            seen_ids.add(post_id)
+            posts_data.append(post)
             if len(posts_data) >= self.max_posts_per_keyword:
                 logger.info(
                     f"Mencapai batas TIKTOK_MAX_POSTS_PER_KEYWORD "
-                    f"({self.max_posts_per_keyword}) untuk '{keyword}'"
+                    f"({self.max_posts_per_keyword}) post BARU untuk "
+                    f"'{keyword}'"
                 )
                 break
-            posts_data.append(post_data)
+
+        if len(posts_data) < self.max_posts_per_keyword:
+            logger.info(
+                f"Hanya {len(posts_data)} post BARU tersedia untuk "
+                f"'{keyword}' dari {len(candidates)} kandidat "
+                f"({len(candidates) - len(posts_data)} sudah ada "
+                f"di database)"
+            )
 
         logger.info(
             f"Scraped {len(posts_data)} post TikTok baru untuk '{keyword}'"
