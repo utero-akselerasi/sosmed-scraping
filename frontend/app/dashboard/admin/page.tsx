@@ -14,7 +14,7 @@ import {
   Users,
   FileText,
 } from 'lucide-react';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, getPlatformLabel } from '@/lib/format';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 
@@ -99,7 +99,7 @@ export default function AdminPage() {
           {platforms?.map((platform: any) => (
             <div key={platform.id} className="rounded-xl border border-border bg-card/60 p-4 transition-all duration-200 hover:shadow-card-hover">
               <div className="mb-2 flex items-center justify-between">
-                <p className="font-medium text-card-foreground">{platform.name}</p>
+                <p className="font-medium text-card-foreground">{getPlatformLabel(platform.type, platform.name)}</p>
                 {platform.isActive ? (
                   <CheckCircle className="h-5 w-5 text-emerald-500" />
                 ) : (

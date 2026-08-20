@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import toast from 'react-hot-toast';
-import { formatNumber, formatCompactNumber, formatPercentage, formatDateTime, formatLocaleDate } from '@/lib/format';
+import { formatNumber, formatCompactNumber, formatPercentage, formatDateTime, formatLocaleDate, getPlatformLabel } from '@/lib/format';
 import {
   TrendingUp,
   Users,
@@ -81,7 +81,7 @@ export default function DashboardPage() {
       if (error?.response?.status === 409) {
         toast.error(t('dashboard.scrapeBusy'));
       } else {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeFailed'));
+        toast.error(apiClient.getErrorMessage(error, t('dashboard.scrapeFailed')));
       }
     },
   });
@@ -100,7 +100,7 @@ export default function DashboardPage() {
       } else if (error?.response?.status === 400) {
         toast.error(error?.response?.data?.message || t('dashboard.scrapeThreadsDisabled'));
       } else {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeFailed'));
+        toast.error(apiClient.getErrorMessage(error, t('dashboard.scrapeFailed')));
       }
     },
   });
@@ -307,7 +307,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-card-foreground capitalize">
-                    {job.platformName || job.platformType}
+                    {getPlatformLabel(job.platformType, job.platformName)}
                   </p>
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${

@@ -1,35 +1,24 @@
-﻿"""
-TikTok Worker - Apify (clockworks/tiktok-scraper)
+"""
+X (Twitter) Worker - provider dispatcher (API v2 / Playwright)
 Festival Mbois Intelligence Platform
 
-Worker mengambil post TikTok REAL melalui Apify Actor
-`clockworks/tiktok-scraper` (pay-per-event, TANPA langganan bulanan),
-memetakannya ke skema posts yang sama dengan platform lain, dan
-menyimpannya ke PostgreSQL.
+Worker mengambil post dari X (Twitter) melalui salah satu provider yang
+dipilih lewat environment TWITTER_PROVIDER:
+- api        : Official X API v2 (Recent Search, Bearer Token app-only)
+- playwright : browser Playwright + sesi cookie Netscape (development)
 
-Prinsip:
-- ZERO dummy/sample data. Jika Apify gagal / Actor gagal / API limit /
-  kredit habis / tidak ada hasil -> TIDAK ada post yang di-insert;
-  job ditandai failed/skipped dengan error yang dicatat.
-- Duplikasi dicegah oleh unique index posts(platform_id,
-  platform_post_id, posted_at) + ON CONFLICT DO NOTHING.
-- Biaya dibatasi keras: TIKTOK_MAX_POSTS_PER_KEYWORD,
-  TIKTOK_MAX_KEYWORDS_PER_RUN, dan maxChargePerRun per run Apify.
-- Keyword dibaca DARI DATABASE setiap siklus (tidak di-hardcode).
-- Credential TIDAK PERNAH dicetak ke log / error message.
+Logika bersama (database, normalisasi struktur post, sentiment, dedup,
+job, analytics) tetap di worker ini; hanya lapisan koleksi data yang
+berbeda per provider (lihat api_provider.py / playwright_provider.py).
 
-Config (workers/.env):
-- APIFY_TOKEN, APIFY_TIKTOK_ACTOR_ID
-- TIKTOK_ENABLED, TIKTOK_AUTO_SCRAPE (gate di run_all.py)
-- TIKTOK_MAX_POSTS_PER_KEYWORD, TIKTOK_MAX_KEYWORDS_PER_RUN,
-  TIKTOK_MAX_CHARGE_PER_RUN, TIKTOK_RUN_TIMEOUT_SECONDS,
-  TIKTOK_MAX_RETRIES, TIKTOK_DELAY_SECONDS
+Credential TIDAK PERNAH dicetak ke log / error message.
 """
 
 import os
 import re
 import sys
 import asyncio
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 from loguru import logger
 from dotenv import load_dotenv
@@ -42,11 +31,17 @@ from shared.database import DatabaseManager
 from shared.sentiment import sentiment_analyzer
 from shared.worker_lock import WorkerLock
 
-from tiktok.apify_provider import ApifyTikTokProvider, DEFAULT_ACTOR_ID
+from twitter.api_provider import XAPIProvider
+from twitter.playwright_provider import XPlaywrightProvider
 
 
-class TikTokWorker:
-    """TikTok scraper worker - koleksi via Apify, tanpa dummy data."""
+def resolve_path(value: str) -> Path:
+    """Resolve path relatif dari direktori workers (CWD normal saat run)."""
+    return Path(value).expanduser()
+
+
+class TwitterWorker:
+    """X (Twitter) scraper worker - memilih provider via TWITTER_PROVIDER."""
 
     def __init__(self):
         self.db = DatabaseManager()
@@ -54,33 +49,49 @@ class TikTokWorker:
         self.keywords: List[str] = []
 
         # Credential - hanya di environment, tidak pernah di-log
-        self.apify_token = os.getenv('APIFY_TOKEN', '').strip()
-        self.actor_id = os.getenv(
-            'APIFY_TIKTOK_ACTOR_ID', DEFAULT_ACTOR_ID
-        ).strip()
+        self.bearer_token = os.getenv('TWITTER_BEARER_TOKEN', '').strip()
 
-        # Configuration
+        # Provider selection
+        self.provider_type = os.getenv('TWITTER_PROVIDER', 'api').strip().lower()
+        if self.provider_type not in ('api', 'playwright'):
+            logger.warning(
+                f"TWITTER_PROVIDER '{self.provider_type}' tidak dikenal - "
+                "fallback ke 'api'"
+            )
+            self.provider_type = 'api'
+
+        # Configuration (dipakai bersama provider)
         self.max_posts_per_keyword = int(
-            os.getenv('TIKTOK_MAX_POSTS_PER_KEYWORD', 5)
+            os.getenv('TWITTER_MAX_POSTS_PER_KEYWORD', 50)
         )
-        self.max_keywords_per_run = int(
-            os.getenv('TIKTOK_MAX_KEYWORDS_PER_RUN', 1)
-        )
-        self.max_charge_per_run = float(
-            os.getenv('TIKTOK_MAX_CHARGE_PER_RUN', 0.50)
-        )
-        self.run_timeout_seconds = int(
-            os.getenv('TIKTOK_RUN_TIMEOUT_SECONDS', 600)
-        )
-        self.max_retries = int(os.getenv('TIKTOK_MAX_RETRIES', 1))
+        self.exclude_retweets = os.getenv(
+            'TWITTER_EXCLUDE_RETWEETS', 'true'
+        ).lower() == 'true'
+        self.lang_filter = os.getenv('TWITTER_LANG', '').strip()
+        self.timeout_seconds = int(os.getenv('TWITTER_TIMEOUT_SECONDS', 30))
+        self.max_retries = int(os.getenv('TWITTER_MAX_RETRIES', 3))
         self.delay_between_keywords = float(
-            os.getenv('TIKTOK_DELAY_SECONDS', 3)
+            os.getenv('TWITTER_DELAY_SECONDS', 3)
         )
+
+        # Configuration Playwright provider
+        self.headless = os.getenv('TWITTER_HEADLESS', 'true').lower() == 'true'
+        self.max_scrolls = int(os.getenv('TWITTER_MAX_SCROLLS', 10))
+        self.cookies_file = resolve_path(os.getenv(
+            'TWITTER_COOKIES_FILE', './twitter/twitter_cookies.txt'
+        ))
+        self.storage_state_file = resolve_path(os.getenv(
+            'TWITTER_STORAGE_STATE_FILE', './twitter/twitter_state.json'
+        ))
 
         self.seen_post_ids: set = set()
         self.failures: List[str] = []
 
-        self.provider = ApifyTikTokProvider(self)
+        # Provider instance
+        if self.provider_type == 'api':
+            self.provider: Any = XAPIProvider(self)
+        else:
+            self.provider = XPlaywrightProvider(self)
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -88,24 +99,25 @@ class TikTokWorker:
 
     async def initialize(self):
         """Initialize worker"""
-        logger.info("Initializing TikTok worker...")
+        logger.info("Initializing X (Twitter) worker...")
+        logger.info(f"Provider aktif: {self.provider_type}")
 
         await self.db.connect()
 
-        platform = await self.db.get_platform_by_type('tiktok')
+        platform = await self.db.get_platform_by_type('twitter')
         if not platform:
-            raise Exception("TikTok platform not found in database")
+            raise Exception("Twitter/X platform not found in database")
         self.platform_id = platform['id']
 
         self.keywords = await self.db.get_active_keywords()
         logger.info(f"Loaded {len(self.keywords)} keywords: {self.keywords}")
 
-        logger.info("TikTok worker initialized successfully")
+        logger.info("X (Twitter) worker initialized successfully")
 
     async def close(self):
         """Close connections"""
         await self.db.close()
-        logger.info("TikTok worker closed")
+        logger.info("X (Twitter) worker closed")
 
     # ------------------------------------------------------------------
     # Helpers
@@ -155,7 +167,7 @@ class TikTokWorker:
                 'platform_id': self.platform_id,
                 'influencer_id': influencer_id,
                 'platform_post_id': post_data['platform_post_id'],
-                'post_type': post_data.get('post_type', 'video'),
+                'post_type': post_data.get('post_type', 'post'),
                 'content': content,
                 'media_urls': post_data.get('media_urls', []),
                 'post_url': post_data.get('post_url'),
@@ -199,15 +211,16 @@ class TikTokWorker:
     # ------------------------------------------------------------------
 
     async def run(self):
-        """Main worker loop - hanya data real, tanpa dummy fallback."""
+        """Main worker loop"""
         logger.info("=" * 60)
-        logger.info("Starting TikTok worker run...")
+        logger.info("Starting X (Twitter) worker run...")
+        logger.info(f"Provider: {self.provider_type}")
         logger.info("=" * 60)
 
-        lock = WorkerLock('tiktok')
+        lock = WorkerLock('twitter')
         if not await lock.acquire(self.db):
             logger.warning(
-                "TikTok worker dilewati: instance lain sudah berjalan "
+                "X worker dilewati: instance lain sudah berjalan "
                 "(lock aktif). Jalankan setelah proses sebelumnya selesai."
             )
             return
@@ -215,10 +228,9 @@ class TikTokWorker:
         job_id = None
         posts_collected = 0
         errors = 0
-        job_metadata: Dict[str, Any] = {}
 
         try:
-            # Cek prasyarat (token) SEBELUM membuat job / biaya apa pun
+            # Cek prasyarat provider (token/cookie) SEBELUM membuat job
             prepare_message = await self.provider.prepare()
             if prepare_message:
                 logger.error(prepare_message)
@@ -228,22 +240,11 @@ class TikTokWorker:
                 )
                 return
 
-            # Batasi jumlah keyword per run (cost protection)
-            keywords = self.keywords[:self.max_keywords_per_run]
-            if not keywords:
-                logger.warning("Tidak ada keyword aktif - run dibatalkan")
-                job_id = await self.db.create_scraping_job(self.platform_id)
-                await self.db.update_scraping_job(
-                    job_id, 'failed', 0, 0,
-                    "Tidak ada keyword aktif di database"
-                )
-                return
-
             job_id = await self.db.create_scraping_job(self.platform_id)
 
             await self.provider.initialize()
 
-            for keyword in keywords:
+            for keyword in self.keywords:
                 logger.info(f"\n📍 Processing keyword: {keyword}")
 
                 posts = await self.provider.search_keyword(keyword)
@@ -259,47 +260,36 @@ class TikTokWorker:
 
                 await asyncio.sleep(self.delay_between_keywords)
 
-            # Catat biaya Apify (bila tersedia) ke metadata job
-            if self.provider.run_costs:
-                job_metadata['apify'] = {
-                    'actor_id': self.actor_id,
-                    'runs': self.provider.run_costs,
-                }
-                logger.info(
-                    f"Apify cost total: "
-                    f"{self.provider.run_costs} USD"
-                )
-
             # Jika SEMUA keyword gagal di level koleksi data (bukan sekadar
-            # tidak ada hasil), tandai job failed agar terlihat di dashboard.
+            # tidak ada hasil), tandai job sebagai failed agar terlihat di
+            # dashboard.
             if (
                 posts_collected == 0
-                and len(self.failures) >= len(keywords)
+                and self.keywords
+                and len(self.failures) >= len(self.keywords)
             ):
                 fail_message = self.failures[0]
                 await self.db.update_scraping_job(
-                    job_id, 'failed', 0, errors, fail_message,
-                    job_metadata or None
+                    job_id, 'failed', 0, errors, fail_message
                 )
                 logger.error(
-                    f"TikTok worker selesai dengan kegagalan koleksi: "
+                    f"X (Twitter) worker selesai dengan kegagalan koleksi: "
                     f"{fail_message}"
                 )
                 return
 
             await self.db.update_scraping_job(
-                job_id, 'completed', posts_collected, errors,
-                metadata=job_metadata or None
+                job_id, 'completed', posts_collected, errors
             )
 
             logger.info("=" * 60)
-            logger.info("✓ TikTok worker completed successfully!")
+            logger.info("✓ X (Twitter) worker completed successfully!")
             logger.info(f"  Posts collected: {posts_collected}")
             logger.info(f"  Errors: {errors}")
             logger.info("=" * 60)
 
         except Exception as e:
-            logger.error(f"TikTok worker failed: {e}")
+            logger.error(f"X (Twitter) worker failed: {e}")
             if job_id:
                 await self.db.update_scraping_job(
                     job_id, 'failed', posts_collected, errors, str(e)
@@ -314,12 +304,12 @@ class TikTokWorker:
 
 async def main():
     """Main entry point"""
-    logger.add("logs/tiktok_worker.log", rotation="1 day", retention="7 days")
+    logger.add("logs/twitter_worker.log", rotation="1 day", retention="7 days")
     logger.info("=" * 60)
-    logger.info("TikTok Worker - Festival Mbois Intelligence Platform")
+    logger.info("X (Twitter) Worker - Festival Mbois Intelligence Platform")
     logger.info("=" * 60)
 
-    worker = TikTokWorker()
+    worker = TwitterWorker()
 
     try:
         await worker.initialize()

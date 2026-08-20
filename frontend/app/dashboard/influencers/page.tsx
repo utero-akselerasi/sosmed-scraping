@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
-import { formatNumber, formatCompactNumber } from '@/lib/format';
+import { formatNumber, formatCompactNumber, getPlatformLabel } from '@/lib/format';
 import { Search, TrendingUp, Users, Award, Eye, BadgeCheck } from 'lucide-react';
 import { Influencer } from '@/types';
 import { ExportDropdown } from '@/components/export-button';
@@ -204,7 +204,7 @@ export default function InfluencersPage() {
 
                 <div className="mb-4">
                   <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800 dark:bg-purple-500/10 dark:text-purple-300">
-                    {influencer.platformName}
+                    {getPlatformLabel(influencer.platformType, influencer.platformName)}
                   </span>
                 </div>
 
