@@ -1,4 +1,4 @@
-﻿"""
+"""
 Worker Orchestrator - Run All Workers
 Festival Mbois Intelligence Platform
 
@@ -38,7 +38,7 @@ def tiktok_auto_enabled() -> bool:
 
 class WorkerOrchestrator:
     """Orchestrates all workers"""
-    
+
     def __init__(self):
         self.instagram_worker = InstagramWorker()
         self.tiktok_worker = TikTokWorker()
@@ -50,8 +50,9 @@ class WorkerOrchestrator:
     async def run_threads_if_enabled(self):
         """Run Threads worker hanya jika THREADS_ENABLED=true (default false).
 
-        Guard terpisah agar Threads tidak pernah membuka browser / membuat
-        scraping_job tanpa konfigurasi eksplisit. Mengembalikan dict hasil.
+        Guard terpisah agar Threads tidak pernah melakukan request API /
+        membuka browser atau membuat scraping_job tanpa konfigurasi
+        eksplisit. Mengembalikan dict hasil.
         """
         if os.getenv('THREADS_ENABLED', 'false').lower() != 'true':
             logger.warning("⏭  Threads Worker SKIP (THREADS_ENABLED=false)")
@@ -67,14 +68,14 @@ class WorkerOrchestrator:
         except Exception as e:
             logger.error(f"✗ Threads Worker failed: {e}")
             return {'status': 'failed', 'error': str(e)}
-    
+
     async def run_all_sequential(self):
         """Run all workers sequentially"""
         logger.info("=" * 70)
         logger.info("WORKER ORCHESTRATOR - Sequential Mode")
         logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info("=" * 70)
-        
+
         results = {
             'instagram': {'status': 'pending', 'error': None},
             'tiktok': {'status': 'pending', 'error': None},
@@ -83,7 +84,7 @@ class WorkerOrchestrator:
             'twitter': {'status': 'pending', 'error': None},
             'threads': {'status': 'pending', 'error': None},
         }
-        
+
         # Run Instagram worker
         try:
             logger.info("\n🔵 Starting Instagram Worker...")
@@ -96,7 +97,7 @@ class WorkerOrchestrator:
             logger.error(f"✗ Instagram Worker failed: {e}")
             results['instagram']['status'] = 'failed'
             results['instagram']['error'] = str(e)
-        
+
         # Run TikTok worker (hanya jika TIKTOK_ENABLED + TIKTOK_AUTO_SCRAPE)
         if not tiktok_auto_enabled():
             logger.info(
@@ -116,7 +117,7 @@ class WorkerOrchestrator:
                 logger.error(f"✗ TikTok Worker failed: {e}")
                 results['tiktok']['status'] = 'failed'
                 results['tiktok']['error'] = str(e)
-        
+
         # Run Website scraper
         try:
             logger.info("\n🔵 Starting Website Scraper...")
@@ -129,7 +130,7 @@ class WorkerOrchestrator:
             logger.error(f"✗ Website Scraper failed: {e}")
             results['website']['status'] = 'failed'
             results['website']['error'] = str(e)
-        
+
         # Run Facebook worker
         try:
             logger.info("\n🔵 Starting Facebook Worker...")
@@ -142,7 +143,7 @@ class WorkerOrchestrator:
             logger.error(f"✗ Facebook Worker failed: {e}")
             results['facebook']['status'] = 'failed'
             results['facebook']['error'] = str(e)
-        
+
         # Run X (Twitter) worker
         try:
             logger.info("\n🔵 Starting X (Twitter) Worker...")
@@ -155,18 +156,18 @@ class WorkerOrchestrator:
             logger.error(f"✗ X (Twitter) Worker failed: {e}")
             results['twitter']['status'] = 'failed'
             results['twitter']['error'] = str(e)
-        
+
         # Run Threads worker (hanya jika THREADS_ENABLED=true)
         results['threads'] = await self.run_threads_if_enabled()
-        
+
         # Summary
         logger.info("\n" + "=" * 70)
         logger.info("WORKER ORCHESTRATOR - Summary")
         logger.info("=" * 70)
-        
+
         completed = sum(1 for r in results.values() if r['status'] == 'completed')
         failed = sum(1 for r in results.values() if r['status'] == 'failed')
-        
+
         for worker_name, result in results.items():
             if result['status'] == 'completed':
                 status_emoji = "✓"
@@ -177,20 +178,20 @@ class WorkerOrchestrator:
             logger.info(f"{status_emoji} {worker_name.capitalize()}: {result['status']}")
             if result['error']:
                 logger.error(f"  Error: {result['error']}")
-        
+
         logger.info(f"\nTotal: {completed} completed, {failed} failed")
         logger.info(f"Finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info("=" * 70)
-        
+
         return results
-    
+
     async def run_all_parallel(self):
         """Run all workers in parallel"""
         logger.info("=" * 70)
         logger.info("WORKER ORCHESTRATOR - Parallel Mode")
         logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info("=" * 70)
-        
+
         async def run_worker(worker, name):
             try:
                 logger.info(f"\n🔵 Starting {name} Worker...")
@@ -202,7 +203,7 @@ class WorkerOrchestrator:
             except Exception as e:
                 logger.error(f"✗ {name} Worker failed: {e}")
                 return {'status': 'failed', 'error': str(e)}
-        
+
         # Run all workers in parallel (TikTok opsional - gated)
         instagram_task = asyncio.create_task(
             run_worker(self.instagram_worker, 'Instagram'))
@@ -253,15 +254,15 @@ class WorkerOrchestrator:
             results_dict['tiktok'] = {'status': 'skipped', 'error': None}
         if threads_task is None:
             results_dict['threads'] = {'status': 'skipped', 'error': None}
-        
+
         # Summary
         logger.info("\n" + "=" * 70)
         logger.info("WORKER ORCHESTRATOR - Summary")
         logger.info("=" * 70)
-        
+
         completed = sum(1 for r in results_dict.values() if r['status'] == 'completed')
         failed = sum(1 for r in results_dict.values() if r['status'] == 'failed')
-        
+
         for worker_name, result in results_dict.items():
             if result['status'] == 'completed':
                 status_emoji = "✓"
@@ -272,30 +273,30 @@ class WorkerOrchestrator:
             logger.info(f"{status_emoji} {worker_name.capitalize()}: {result['status']}")
             if result['error']:
                 logger.error(f"  Error: {result['error']}")
-        
+
         logger.info(f"\nTotal: {completed} completed, {failed} failed")
         logger.info(f"Finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         logger.info("=" * 70)
-        
+
         return results_dict
 
 
 async def main():
     """Main entry point"""
-    
+
     # Setup logging
     logger.add("logs/orchestrator.log", rotation="1 day", retention="7 days")
-    
+
     # Get mode from environment or default to sequential
     mode = os.getenv('WORKER_MODE', 'sequential').lower()
-    
+
     orchestrator = WorkerOrchestrator()
-    
+
     if mode == 'parallel':
         results = await orchestrator.run_all_parallel()
     else:
         results = await orchestrator.run_all_sequential()
-    
+
     # Exit with error code if any worker failed
     if any(r['status'] == 'failed' for r in results.values()):
         sys.exit(1)

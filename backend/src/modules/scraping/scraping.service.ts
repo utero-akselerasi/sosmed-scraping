@@ -1,10 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { Interval, Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { spawn, ChildProcess } from "child_process";
 import * as path from "path";
-import { Interval, Cron } from "@nestjs/schedule";
 import {
   ScrapingJob,
   CollectionStatus,
@@ -29,15 +29,6 @@ export class ScrapingService implements OnModuleInit {
     private readonly configService: ConfigService,
   ) {}
 
-  async onModuleInit(): Promise<void> {
-    const recovered = await this.recoverStaleJobs();
-    if (recovered > 0) {
-      this.logger.warn(
-        `Recovery: ${recovered} scraping job(s) stale ditandai sebagai failed`,
-      );
-    }
-  }
-
   /**
    * Jadwal otomatis scraping Threads (default: setiap 6 jam).
    * Hanya aktif jika THREADS_ENABLED=true.
@@ -55,6 +46,15 @@ export class ScrapingService implements OnModuleInit {
       this.logger.log("Scheduled Threads scraping started");
     } else if (result === "busy") {
       this.logger.warn("Scheduled Threads scraping skipped: busy");
+    }
+  }
+
+  async onModuleInit(): Promise<void> {
+    const recovered = await this.recoverStaleJobs();
+    if (recovered > 0) {
+      this.logger.warn(
+        `Recovery: ${recovered} scraping job(s) stale ditandai sebagai failed`,
+      );
     }
   }
 
