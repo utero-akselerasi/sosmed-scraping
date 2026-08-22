@@ -41,18 +41,18 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('postDetail.ariaLabel', { author: post.influencerName })}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border border-border bg-card shadow-popover"
+        className="w-full max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] md:max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border border-border bg-card shadow-popover"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="flex items-center justify-between border-b border-border p-4 sm:p-6">
           <div className="flex items-center space-x-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-xl font-bold text-white">
               {post.influencerName?.charAt(0).toUpperCase() || '?'}
@@ -72,7 +72,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
         </div>
 
         {/* Content */}
-        <div className="max-h-[calc(90vh-200px)] overflow-y-auto p-6">
+        <div className="max-h-[calc(90vh-200px)] overflow-y-auto p-4 sm:p-6">
           {/* Platform & Sentiment Badges */}
           <div className="mb-4 flex items-center space-x-2">
             <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getPlatformColor(post.platformName || ''))}>
@@ -108,7 +108,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
           {/* Engagement Stats */}
           <div className="mb-6">
             <h3 className="mb-3 text-sm font-semibold text-card-foreground">{t('postDetail.engagementMetrics')}</h3>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
               {STAT_TILES.map((tile) => {
                 const Icon = tile.icon;
                 return (
@@ -165,7 +165,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border bg-muted/40 p-6">
+        <div className="flex flex-col gap-3 border-t border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="text-sm text-muted-foreground">
             {t('postDetail.postId')}: <span className="font-mono text-xs">{post.id}</span>
           </div>
@@ -174,7 +174,7 @@ export function PostDetailModal({ post, onClose }: PostDetailModalProps) {
               href={post.postUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-all duration-200 hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               {t('common.viewOriginalPost')}

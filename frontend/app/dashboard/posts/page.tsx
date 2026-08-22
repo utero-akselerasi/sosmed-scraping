@@ -308,8 +308,8 @@ export default function PostsPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between border-t border-border pt-3">
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><ThumbsUp className="h-4 w-4" /> {formatNumber(post.likesCount)}</span>
                     <span className="flex items-center gap-1"><MessageCircle className="h-4 w-4" /> {formatNumber(post.commentsCount)}</span>
                     <span className="flex items-center gap-1"><Share2 className="h-4 w-4" /> {formatNumber(post.sharesCount)}</span>
@@ -318,7 +318,7 @@ export default function PostsPage() {
                       <TrendingUp className="h-4 w-4" /> {post.engagementScore.toFixed(1)}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
                       {formatRelativeTime(post.postedAt)}
                     </span>
