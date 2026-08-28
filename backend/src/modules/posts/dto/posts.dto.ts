@@ -75,12 +75,28 @@ export class GetPostsQueryDto {
 
   @ApiPropertyOptional({
     description: "Sort by field",
-    enum: ["postedAt", "engagementScore", "likesCount", "commentsCount", "posted_at", "engagement_score", "likes_count", "comments_count"],
+    enum: [
+      "postedAt", "posted_at",
+      "engagementScore", "engagement_score",
+      "likesCount", "likes_count",
+      "commentsCount", "comments_count",
+      "sharesCount", "shares_count",
+      "viewsCount", "views_count",
+      "scrapedAt", "scraped_at",
+    ],
     default: "postedAt",
   })
   @IsOptional()
   @IsString()
-  @IsIn(["postedAt", "engagementScore", "likesCount", "commentsCount", "posted_at", "engagement_score", "likes_count", "comments_count"])
+  @IsIn([
+    "postedAt", "posted_at",
+    "engagementScore", "engagement_score",
+    "likesCount", "likes_count",
+    "commentsCount", "comments_count",
+    "sharesCount", "shares_count",
+    "viewsCount", "views_count",
+    "scrapedAt", "scraped_at",
+  ])
   sortBy?: string = "postedAt";
 
   @ApiPropertyOptional({

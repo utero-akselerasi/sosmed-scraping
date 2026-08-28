@@ -83,7 +83,7 @@ export function formatDateTime(date: Date | string): string {
  * Get sentiment color
  */
 export function getSentimentColor(sentiment: string): string {
-  switch (sentiment.toLowerCase()) {
+  switch (sentiment?.toLowerCase()) {
     case 'positive':
       return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300';
     case 'negative':
@@ -93,6 +93,15 @@ export function getSentimentColor(sentiment: string): string {
     default:
       return 'bg-muted text-muted-foreground';
   }
+}
+
+/**
+ * Get localized sentiment label
+ */
+export function getSentimentLabel(sentiment: string): string {
+  const key = `common.${sentiment?.toLowerCase() || ''}`;
+  const translated = translate(key);
+  return translated === key ? (sentiment || '') : translated;
 }
 
 /**
