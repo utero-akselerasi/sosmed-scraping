@@ -127,6 +127,7 @@ export default function InfluencerDetailPage() {
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-4">
             {influencer.profilePictureUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={influencer.profilePictureUrl}
                 alt={influencer.fullName}

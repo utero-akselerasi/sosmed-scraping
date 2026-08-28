@@ -119,7 +119,7 @@ export class PDFReportService {
       doc.save(`dashboard-report-${new Date().toISOString().split('T')[0]}.pdf`);
       return true;
     } catch (error) {
-      console.error('PDF generation failed:', error);
+      console.warn('PDF generation failed:', error);
       throw error;
     }
   }
@@ -209,7 +209,7 @@ export class PDFReportService {
       doc.save(`posts-report-${new Date().toISOString().split('T')[0]}.pdf`);
       return true;
     } catch (error) {
-      console.error('PDF generation failed:', error);
+      console.warn('PDF generation failed:', error);
       throw error;
     }
   }
@@ -317,7 +317,7 @@ export class PDFReportService {
       doc.save(`analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
       return true;
     } catch (error) {
-      console.error('PDF generation failed:', error);
+      console.warn('PDF generation failed:', error);
       throw error;
     }
   }

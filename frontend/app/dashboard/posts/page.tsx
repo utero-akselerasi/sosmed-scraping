@@ -285,6 +285,7 @@ export default function PostsPage() {
                 <p className="mb-3 line-clamp-3 text-card-foreground/90">{post.content}</p>
 
                 {post.mediaUrls && post.mediaUrls.length > 0 && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={post.mediaUrls[0]}
                     alt={post.content || post.platformPostId}
