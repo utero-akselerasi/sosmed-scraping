@@ -203,7 +203,7 @@ class TwitterWorker:
             return False
 
         except Exception as e:
-            logger.error(f"Error processing post: {e}")
+            logger.exception(f"Error processing post: {e}")
             return False
 
     # ------------------------------------------------------------------
