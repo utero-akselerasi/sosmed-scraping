@@ -162,5 +162,10 @@ export class EngagementAnalyticsDto {
     content: string;
     engagementScore: number;
     platform: string;
+    sentiment: string;
+    likesCount: number;
+    commentsCount: number;
+    sharesCount: number;
+    postedAt: string;
   }>;
 }

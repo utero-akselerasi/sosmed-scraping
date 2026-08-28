@@ -10,6 +10,7 @@ import {
   CollectionStatus,
 } from "../../common/entities/scraping-job.entity";
 import { Post } from "../../common/entities/post.entity";
+import { ScrapingGateway } from "./scraping.gateway";
 
 export type TriggerResult = "started" | "busy" | "disabled";
 
@@ -27,6 +28,7 @@ export class ScrapingService implements OnModuleInit {
     @InjectRepository(Post)
     private readonly postsRepo: Repository<Post>,
     private readonly configService: ConfigService,
+    private readonly gateway: ScrapingGateway,
   ) {}
 
   /**
@@ -166,6 +168,11 @@ export class ScrapingService implements OnModuleInit {
 
     this.busy = true;
     try {
+      this.gateway.emitJobStarted({
+        jobId: "manual-" + Date.now(),
+        platform: "all",
+        startedAt: new Date().toISOString(),
+      });
       this.spawnWorker();
       return "started";
     } catch (error) {
@@ -196,6 +203,11 @@ export class ScrapingService implements OnModuleInit {
 
     this.busy = true;
     try {
+      this.gateway.emitJobStarted({
+        jobId: "threads-" + Date.now(),
+        platform: "threads",
+        startedAt: new Date().toISOString(),
+      });
       this.spawnWorker("threads/worker.py");
       return "started";
     } catch (error) {
@@ -238,6 +250,21 @@ export class ScrapingService implements OnModuleInit {
       this.logger.log(
         `Worker selesai (exit=${code}, signal=${signal ?? "none"})`,
       );
+      if (code === 0) {
+        this.gateway.emitJobCompleted({
+          jobId: "worker-" + Date.now(),
+          platform: script.includes("threads") ? "threads" : "all",
+          completedAt: new Date().toISOString(),
+          postsFound: 0,
+        });
+      } else {
+        this.gateway.emitJobFailed({
+          jobId: "worker-" + Date.now(),
+          platform: script.includes("threads") ? "threads" : "all",
+          error: `Worker exited with code ${code}, signal ${signal ?? "none"}`,
+          failedAt: new Date().toISOString(),
+        });
+      }
     });
 
     // Jaga-jaga: lepas lock jika event tidak pernah terpanggil

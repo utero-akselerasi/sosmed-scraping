@@ -20,6 +20,7 @@ import { ExportButton } from '@/components/export-button';
 import { ExportService } from '@/lib/export/export-service';
 import { useAutoRefresh } from '@/hooks/use-auto-refresh';
 import { AutoRefreshToggle } from '@/components/auto-refresh-toggle';
+import { useScrapingSocket } from '@/hooks/use-scraping-socket';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 
@@ -32,6 +33,9 @@ const STAT_ICON_COLORS = {
 
 export default function DashboardPage() {
   const { t } = useI18n();
+
+  // WebSocket real-time updates
+  useScrapingSocket();
 
   // Auto-refresh hook
   const autoRefresh = useAutoRefresh({

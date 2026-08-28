@@ -7,6 +7,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
+const ROLE_ROUTES: Record<string, string[]> = {
+  admin: ['/dashboard', '/dashboard/posts', '/dashboard/influencers', '/dashboard/platforms', '/dashboard/analytics', '/dashboard/keywords', '/dashboard/users', '/dashboard/admin', '/dashboard/profile'],
+  analyst: ['/dashboard', '/dashboard/posts', '/dashboard/influencers', '/dashboard/platforms', '/dashboard/analytics', '/dashboard/profile'],
+  viewer: ['/dashboard', '/dashboard/posts', '/dashboard/influencers', '/dashboard/platforms', '/dashboard/analytics', '/dashboard/profile'],
+};
+
 export default function DashboardLayout({
   children,
 }: {
@@ -23,6 +29,15 @@ export default function DashboardLayout({
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      const allowedRoutes = ROLE_ROUTES[user.role] || ROLE_ROUTES.viewer;
+      if (!allowedRoutes.includes(pathname)) {
+        router.push('/dashboard');
+      }
+    }
+  }, [user, isLoading, pathname, router]);
 
   if (isLoading) {
     return (

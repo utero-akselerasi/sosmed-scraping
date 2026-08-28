@@ -219,6 +219,32 @@ export interface SentimentAnalytics {
   }>;
 }
 
+// Engagement Analytics types
+export interface TopEngagingPost {
+  id: string;
+  content: string;
+  engagementScore: number;
+  platform: string;
+  sentiment: string;
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  postedAt: string;
+}
+
+export interface EngagementAnalytics {
+  totalPosts: number;
+  totalLikes: number;
+  totalComments: number;
+  totalShares: number;
+  totalViews: number;
+  avgLikesPerPost: number;
+  avgCommentsPerPost: number;
+  avgSharesPerPost: number;
+  avgEngagementPerPost: number;
+  topEngagingPosts: TopEngagingPost[];
+}
+
 // Keyword types
 export interface Keyword {
   id: string;

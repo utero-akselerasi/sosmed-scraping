@@ -295,6 +295,141 @@ Authorization: Bearer <token>
 
 ---
 
+### 👤 Users (`/users`)
+
+#### Get Current User Profile
+```http
+GET /users/profile
+Authorization: Bearer <token>
+
+Response:
+{
+  "id": "uuid",
+  "email": "user@example.com",
+  "fullName": "John Doe",
+  "role": "admin",
+  "isActive": true,
+  "lastLogin": "2026-08-20T10:00:00Z",
+  "createdAt": "2026-08-01T00:00:00Z",
+  "updatedAt": "2026-08-20T10:00:00Z"
+}
+```
+
+#### Update Current User Profile
+```http
+PATCH /users/profile
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "fullName": "New Name",
+  "email": "newemail@example.com"
+}
+```
+
+#### Change Current User Password
+```http
+PATCH /users/profile/password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "currentPassword": "oldpassword",
+  "newPassword": "newpassword123"
+}
+```
+
+#### Create New User (Admin only)
+```http
+POST /users
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "fullName": "New User",
+  "password": "password123",
+  "role": "viewer"
+}
+```
+
+#### Get All Users (Admin/Analyst)
+```http
+GET /users?page=1&limit=20&role=admin&isActive=true&search=john
+Authorization: Bearer <token>
+
+Response:
+{
+  "data": [
+    {
+      "id": "uuid",
+      "email": "user@example.com",
+      "fullName": "John Doe",
+      "role": "admin",
+      "isActive": true,
+      "lastLogin": "2026-08-20T10:00:00Z",
+      "createdAt": "2026-08-01T00:00:00Z",
+      "updatedAt": "2026-08-20T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 5,
+    "totalPages": 1
+  }
+}
+```
+
+#### Get User by ID (Admin/Analyst)
+```http
+GET /users/:id
+Authorization: Bearer <token>
+```
+
+#### Update User (Admin only)
+```http
+PATCH /users/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "fullName": "Updated Name",
+  "email": "updated@example.com",
+  "role": "analyst",
+  "isActive": true
+}
+```
+
+#### Change User Password (Self or Admin)
+```http
+PATCH /users/:id/password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "currentPassword": "oldpassword",
+  "newPassword": "newpassword123"
+}
+```
+
+#### Toggle User Active Status (Admin only)
+```http
+PATCH /users/:id/toggle
+Authorization: Bearer <token>
+
+Response: Updated user object with toggled isActive status
+```
+
+#### Delete User (Admin only)
+```http
+DELETE /users/:id
+Authorization: Bearer <token>
+```
+- `403` - Cannot delete your own account
+
+---
+
 ### 📊 Analytics (`/analytics`)
 
 #### Get Dashboard Overview
@@ -541,10 +676,11 @@ http://localhost:4000/api/v1/docs
 
 ---
 
-## 📊 Total Endpoints: 30
+## 📊 Total Endpoints: 40
 
 ### By Module:
 - Authentication: 4 endpoints
+- Users: 10 endpoints
 - Posts: 5 endpoints
 - Platforms: 5 endpoints
 - Influencers: 4 endpoints
