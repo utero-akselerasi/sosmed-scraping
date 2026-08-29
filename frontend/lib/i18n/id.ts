@@ -302,6 +302,32 @@ export const id: Record<keyof typeof import('./en').en, string> = {
   'keywords.noteBody':
     'Kata kunci digunakan oleh worker untuk mengumpulkan postingan media sosial. Kata kunci aktif akan dipantau pada siklus scraping berikutnya.',
 
+  // Keyword monitoring
+  'keywords.viewMonitoring': 'Lihat Monitoring',
+  'keywords.monitoring': 'Monitoring Kata Kunci',
+  'keywords.monitoringDescription': 'Pantau sebutan, engagement, dan sentimen untuk "{keyword}"',
+  'keywords.totalMentions': 'Total Sebutan',
+  'keywords.totalEngagement': 'Total Engagement',
+  'keywords.avgEngagementScore': 'Rata-rata Skor Engagement',
+  'keywords.activePlatforms': 'Platform Aktif',
+  'keywords.acrossPlatforms': 'Di {count} platform',
+  'keywords.sentimentBreakdown': 'Rincian Sentimen',
+  'keywords.platformDistribution': 'Distribusi Platform',
+  'keywords.mentionsTrend': 'Tren Sebutan',
+  'keywords.engagementOverTime': 'Engagement Sepanjang Waktu',
+  'keywords.topPosts': 'Post Teratas',
+  'keywords.topInfluencers': 'Influencer Teratas',
+  'keywords.recentMentions': 'Sebutan Terbaru',
+  'keywords.noPosts': 'Belum ada post untuk kata kunci ini',
+  'keywords.noPostsHint': 'Post akan muncul setelah siklus scraping berikutnya dengan kata kunci ini aktif.',
+  'keywords.firstMention': 'Sebutan Pertama',
+  'keywords.lastMention': 'Sebutan Terakhir',
+  'keywords.backToKeywords': 'Kembali ke Kata Kunci',
+  'keywords.dailyGrowth': 'Pertumbuhan Harian',
+  'keywords.weeklyGrowth': 'Pertumbuhan Mingguan',
+  'keywords.monthlyGrowth': 'Pertumbuhan Bulanan',
+  'keywords.postCount': '{count} post',
+
   // Users page
   'users.management': 'Manajemen Pengguna',
   'users.description': 'Kelola pengguna sistem dan izin akses',

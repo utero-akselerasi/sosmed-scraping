@@ -223,6 +223,13 @@ class ApiClient {
     return response.data;
   }
 
+  async getKeywordOverview(keyword: string) {
+    const response = await this.client.get('/analytics/keyword/overview', {
+      params: { keyword },
+    });
+    return response.data;
+  }
+
   // Users endpoints
   async getUsers(params?: any) {
     const response = await this.client.get('/users', { params });

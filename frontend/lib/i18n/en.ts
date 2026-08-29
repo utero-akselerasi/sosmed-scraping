@@ -302,6 +302,32 @@ export const en = {
   'keywords.noteBody':
     'Keywords are used by workers to collect social media posts. Active keywords will be monitored during the next scraping cycle.',
 
+  // Keyword monitoring
+  'keywords.viewMonitoring': 'View Monitoring',
+  'keywords.monitoring': 'Keyword Monitoring',
+  'keywords.monitoringDescription': 'Monitor mentions, engagement, and sentiment for "{keyword}"',
+  'keywords.totalMentions': 'Total Mentions',
+  'keywords.totalEngagement': 'Total Engagement',
+  'keywords.avgEngagementScore': 'Avg Engagement Score',
+  'keywords.activePlatforms': 'Active Platforms',
+  'keywords.acrossPlatforms': 'Across {count} platforms',
+  'keywords.sentimentBreakdown': 'Sentiment Breakdown',
+  'keywords.platformDistribution': 'Platform Distribution',
+  'keywords.mentionsTrend': 'Mentions Trend',
+  'keywords.engagementOverTime': 'Engagement Over Time',
+  'keywords.topPosts': 'Top Posts',
+  'keywords.topInfluencers': 'Top Influencers',
+  'keywords.recentMentions': 'Recent Mentions',
+  'keywords.noPosts': 'No posts found for this keyword yet',
+  'keywords.noPostsHint': 'Posts will appear after the next scraping cycle with this keyword active.',
+  'keywords.firstMention': 'First Mention',
+  'keywords.lastMention': 'Last Mention',
+  'keywords.backToKeywords': 'Back to Keywords',
+  'keywords.dailyGrowth': 'Daily Growth',
+  'keywords.weeklyGrowth': 'Weekly Growth',
+  'keywords.monthlyGrowth': 'Monthly Growth',
+  'keywords.postCount': '{count} posts',
+
   // Users page
   'users.management': 'Users Management',
   'users.description': 'Manage system users and permissions',

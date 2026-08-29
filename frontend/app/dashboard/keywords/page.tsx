@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { formatLocaleDate } from '@/lib/format';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Hash, Search, Edit2, Check, X, Power } from 'lucide-react';
+import { Plus, Trash2, Hash, Search, Edit2, Check, X, Power, BarChart3 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export default function KeywordsPage() {
   const [editKeyword, setEditKeyword] = useState('');
   const [editPriority, setEditPriority] = useState(1);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data: keywordsData, isLoading } = useQuery({
     queryKey: ['keywords', searchTerm],
@@ -356,6 +358,15 @@ export default function KeywordsPage() {
                           </>
                         ) : (
                           <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => router.push(`/dashboard/keywords/${keyword.id}`)}
+                              className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600"
+                              title={t('keywords.viewMonitoring')}
+                            >
+                              <BarChart3 className="h-4 w-4" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
