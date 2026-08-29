@@ -17,6 +17,9 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+
+const externalImageLoader = ({ src }: { src: string }) => src;
 
 const inputClasses =
   'w-full rounded-lg border border-input bg-card px-4 py-2 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40';
@@ -350,9 +353,12 @@ export default function PostsPage() {
                       <span className="text-sm text-muted-foreground">{t('posts.videoContent')}</span>
                     </div>
                   ) : (
-                    <img
+                    <Image
                       src={post.mediaUrls[0]}
                       alt={post.content || post.platformPostId}
+                      width={800}
+                      height={600}
+                      loader={externalImageLoader}
                       className="mb-3 max-h-72 w-full rounded-xl border border-border object-cover"
                       loading="lazy"
                     />

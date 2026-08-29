@@ -58,6 +58,11 @@ export class GetPostsQueryDto {
   @IsString()
   search?: string;
 
+  @ApiPropertyOptional({ description: "Filter by keyword in post content" })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
   @ApiPropertyOptional({ description: "Search by hashtag (without #)" })
   @IsOptional()
   @IsString()

@@ -31,6 +31,7 @@ export class PostsService {
       postType,
       sentiment,
       search,
+      keyword,
       hashtag,
       startDate,
       endDate,
@@ -68,6 +69,12 @@ export class PostsService {
         "(post.content ILIKE :search OR influencer.username ILIKE :search OR influencer.fullName ILIKE :search)",
         { search: `%${search}%` },
       );
+    }
+
+    if (keyword) {
+      queryBuilder.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${keyword}%`,
+      });
     }
 
     if (hashtag) {
@@ -176,6 +183,12 @@ export class PostsService {
         "(post.content ILIKE :search OR influencer.username ILIKE :search OR influencer.fullName ILIKE :search)",
         { search: `%${query.search}%` },
       );
+    }
+
+    if (query.keyword) {
+      queryBuilder.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
     }
 
     if (query.hashtag) {

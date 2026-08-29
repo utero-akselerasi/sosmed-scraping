@@ -45,6 +45,11 @@ export class AnalyticsService {
         platformId: query.platformId,
       });
     }
+    if (query.keyword) {
+      queryBuilder.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
+    }
 
     // Get overall statistics
     const stats = await queryBuilder
@@ -159,6 +164,11 @@ export class AnalyticsService {
         platformId: query.platformId,
       });
     }
+    if (query.keyword) {
+      qb.andWhere(`${alias}.content ILIKE :keyword`, {
+        keyword: `%${query.keyword}%`,
+      });
+    }
   }
 
   async getTrendAnalytics(
@@ -184,6 +194,11 @@ export class AnalyticsService {
         platformId: query.platformId,
       });
     }
+    if (query.keyword) {
+      dailyQb.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
+    }
     const dailyPosts = await dailyQb
       .groupBy("date")
       .orderBy("date", "ASC")
@@ -201,6 +216,11 @@ export class AnalyticsService {
         platformId: query.platformId,
       });
     }
+    if (query.keyword) {
+      hourlyQb.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
+    }
     const hourlyPosts = await hourlyQb
       .groupBy("date")
       .orderBy("date", "ASC")
@@ -211,6 +231,11 @@ export class AnalyticsService {
       if (query.platformId) {
         qb.andWhere("post.platformId = :platformId", {
           platformId: query.platformId,
+        });
+      }
+      if (query.keyword) {
+        qb.andWhere("post.content ILIKE :keyword", {
+          keyword: `%${query.keyword}%`,
         });
       }
     };
@@ -389,6 +414,11 @@ export class AnalyticsService {
     if (query.platformId) {
       trendQb.andWhere("post.platformId = :platformId", {
         platformId: query.platformId,
+      });
+    }
+    if (query.keyword) {
+      trendQb.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
       });
     }
     const trend = await trendQb
