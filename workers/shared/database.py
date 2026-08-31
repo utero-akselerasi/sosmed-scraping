@@ -121,6 +121,27 @@ class DatabaseManager:
                 )
                 return None
     
+    async def get_existing_platform_post_ids(
+        self, platform_id: str, post_ids: List[str]
+    ) -> set:
+        """Return set platform_post_id yang sudah tersimpan di posts.
+
+        Dipakai untuk menyaring post lama SEBELUM di-save (dedup post ID)
+        tanpa mengubah logika insert/unique index yang sudah ada.
+        """
+        if not post_ids:
+            return set()
+        unique_ids = list(set(str(pid) for pid in post_ids if pid))
+        if not unique_ids:
+            return set()
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT platform_post_id FROM posts "
+                "WHERE platform_id = $1 AND platform_post_id = ANY($2::text[])",
+                platform_id, unique_ids
+            )
+            return {row['platform_post_id'] for row in rows}
+
     async def update_hashtag_usage(self, hashtag: str):
         """Update or insert hashtag usage"""
         async with self.pool.acquire() as conn:
@@ -146,12 +167,15 @@ class DatabaseManager:
     async def update_scraping_job(self, job_id: str, status: str, 
                                    posts_collected: int = 0, 
                                    errors_count: int = 0,
-                                   error_message: str = None):
-        """Update scraping job status"""
+                                   error_message: str = None,
+                                   metadata: Optional[Dict[str, Any]] = None):
+        """Update scraping job status (metadata optional, mis. biaya Apify)"""
         async with self.pool.acquire() as conn:
             await conn.execute("""
                 UPDATE scraping_jobs
                 SET status = $1, completed_at = CURRENT_TIMESTAMP,
-                    posts_collected = $2, errors_count = $3, error_message = $4
-                WHERE id = $5
-            """, status, posts_collected, errors_count, error_message, job_id)
+                    posts_collected = $2, errors_count = $3, error_message = $4,
+                    metadata = COALESCE($5::jsonb, metadata)
+                WHERE id = $6
+            """, status, posts_collected, errors_count, error_message,
+                json.dumps(metadata) if metadata else None, job_id)

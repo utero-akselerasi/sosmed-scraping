@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
-import { formatNumber, formatCompactNumber, formatLocaleDate } from '@/lib/format';
+import { formatNumber, formatCompactNumber, formatLocaleDate, getPlatformLabel } from '@/lib/format';
 import {
   ArrowLeft,
   Users,
@@ -127,6 +127,7 @@ export default function InfluencerDetailPage() {
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-4">
             {influencer.profilePictureUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={influencer.profilePictureUrl}
                 alt={influencer.fullName}
@@ -148,7 +149,7 @@ export default function InfluencerDetailPage() {
               </div>
               <p className="text-sm text-muted-foreground">@{influencer.username}</p>
               <span className="mt-1 inline-block rounded bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                {influencer.platformName}
+                {getPlatformLabel(influencer.platformType, influencer.platformName)}
               </span>
             </div>
           </div>

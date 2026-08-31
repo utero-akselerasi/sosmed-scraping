@@ -1,10 +1,9 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
-import toast from 'react-hot-toast';
-import { formatNumber, formatCompactNumber, formatPercentage, formatDateTime, formatLocaleDate } from '@/lib/format';
+import { formatNumber, formatCompactNumber, formatPercentage, formatDateTime, formatLocaleDate, getPlatformLabel } from '@/lib/format';
 import {
   TrendingUp,
   Users,
@@ -13,9 +12,7 @@ import {
   ThumbsUp,
   MessageCircle,
   Share2,
-  Eye,
-  RefreshCw,
-  Loader2
+  Eye
 } from 'lucide-react';
 import { TrendChart } from '@/components/charts/trend-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
@@ -34,7 +31,6 @@ const STAT_ICON_COLORS = {
 } as const;
 
 export default function DashboardPage() {
-  const queryClient = useQueryClient();
   const { t } = useI18n();
 
   // Auto-refresh hook
@@ -68,41 +64,6 @@ export default function DashboardPage() {
     queryKey: ['scraping-status'],
     queryFn: () => apiClient.getScrapingStatus(),
     refetchInterval: 15000,
-  });
-
-  const scrapeMutation = useMutation({
-    mutationFn: () => apiClient.triggerScraping(),
-    onSuccess: (data) => {
-      toast.success(data?.message || t('dashboard.scrapeStarted'));
-      queryClient.invalidateQueries({ queryKey: ['scraping-status'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-overview'] });
-    },
-    onError: (error: any) => {
-      if (error?.response?.status === 409) {
-        toast.error(t('dashboard.scrapeBusy'));
-      } else {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeFailed'));
-      }
-    },
-  });
-
-  const threadsScrapeMutation = useMutation({
-    mutationFn: () => apiClient.triggerThreadsScraping(),
-    onSuccess: (data) => {
-      toast.success(data?.message || t('dashboard.scrapeThreadsStarted'));
-      queryClient.invalidateQueries({ queryKey: ['scraping-status'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-    onError: (error: any) => {
-      if (error?.response?.status === 409) {
-        toast.error(t('dashboard.scrapeBusy'));
-      } else if (error?.response?.status === 400) {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeThreadsDisabled'));
-      } else {
-        toast.error(error?.response?.data?.message || t('dashboard.scrapeFailed'));
-      }
-    },
   });
 
   const handleExport = () => {
@@ -218,30 +179,6 @@ export default function DashboardPage() {
         title={t('dashboard.overview')}
         description={t('dashboard.overviewDescription')}
       >
-        <button
-          onClick={() => scrapeMutation.mutate()}
-          disabled={scrapeMutation.isPending}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {scrapeMutation.isPending ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4 mr-2" />
-          )}
-          {t('dashboard.scrapeNow')}
-        </button>
-        <button
-          onClick={() => threadsScrapeMutation.mutate()}
-          disabled={threadsScrapeMutation.isPending || scrapeMutation.isPending}
-          className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-200 dark:text-gray-900 dark:hover:bg-white"
-        >
-          {threadsScrapeMutation.isPending ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4 mr-2" />
-          )}
-          {t('dashboard.scrapeThreads')}
-        </button>
         <AutoRefreshToggle
           isEnabled={autoRefresh.isEnabled}
           countdown={autoRefresh.countdown}
@@ -307,7 +244,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-card-foreground capitalize">
-                    {job.platformName || job.platformType}
+                    {getPlatformLabel(job.platformType, job.platformName)}
                   </p>
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${

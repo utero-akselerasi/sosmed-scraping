@@ -86,6 +86,10 @@ cookies.txt
 instagram_session
 facebook_cookies.txt
 facebook_state.json
+x.com_cookies.txt
+twitter_cookies.txt
+twitter_state.json
+*.bak
 
 # Threads sessions (NEVER commit cookies / storage state)
 data/sessions/

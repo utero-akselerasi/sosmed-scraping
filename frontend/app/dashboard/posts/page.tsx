@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
-import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor } from '@/lib/format';
+import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor, getPlatformLabel } from '@/lib/format';
 import { Search, Filter, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, TrendingUp } from 'lucide-react';
 import { Post, SentimentType } from '@/types';
 import { ExportDropdown } from '@/components/export-button';
@@ -238,7 +238,7 @@ export default function PostsPage() {
               <option value="">{t('common.allPlatforms')}</option>
               {platforms?.map((platform: any) => (
                 <option key={platform.id} value={platform.id}>
-                  {platform.name}
+                  {getPlatformLabel(platform.type, platform.name)}
                 </option>
               ))}
             </select>
@@ -274,7 +274,7 @@ export default function PostsPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getPlatformColor(post.platformName || ''))}>
-                      {post.platformName}
+                      {getPlatformLabel(post.platformType, post.platformName)}
                     </span>
                     <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getSentimentColor(post.sentiment as SentimentType))}>
                       {post.sentiment}
@@ -285,6 +285,7 @@ export default function PostsPage() {
                 <p className="mb-3 line-clamp-3 text-card-foreground/90">{post.content}</p>
 
                 {post.mediaUrls && post.mediaUrls.length > 0 && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={post.mediaUrls[0]}
                     alt={post.content || post.platformPostId}

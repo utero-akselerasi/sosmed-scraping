@@ -249,6 +249,10 @@ export const en = {
   'platforms.activePlatforms': 'Active Platforms',
   'platforms.avgEngagementScore': 'Avg Engagement Score',
   'platforms.sentimentDistribution': 'Sentiment Distribution',
+  'platforms.x': 'X',
+  'platforms.xPosts': 'X posts',
+  'platforms.xScraping': 'X scraping',
+  'platforms.xStatus': 'X API status',
 
   // Keywords page
   'keywords.management': 'Keywords Management',
