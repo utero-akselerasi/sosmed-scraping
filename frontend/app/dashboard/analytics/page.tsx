@@ -1,29 +1,50 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { formatNumber, formatPercentage, formatCompactNumber, formatLocaleDate } from '@/lib/format';
-import { TrendingUp, BarChart3, Hash, Heart, Activity, PieChart, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
+import { TrendingUp, BarChart3, Hash, Heart, Activity, PieChart, ThumbsUp, MessageCircle, Share2, Filter, X } from 'lucide-react';
 import { SentimentBarChart } from '@/components/charts/sentiment-bar-chart';
 import { CustomPieChart } from '@/components/charts/pie-chart';
 import { TrendChart } from '@/components/charts/trend-chart';
 import { EngagementAreaChart } from '@/components/charts/area-chart';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export default function AnalyticsPage() {
   const { t } = useI18n();
 
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [platformId, setPlatformId] = useState('');
+
+  const filterParams = useMemo(() => {
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (platformId) params.platformId = platformId;
+    return params;
+  }, [startDate, endDate, platformId]);
+
+  const hasFilters = startDate || endDate || platformId;
+
+  const { data: platforms } = useQuery({
+    queryKey: ['platforms'],
+    queryFn: () => apiClient.getPlatforms(),
+  });
+
   const { data: sentiment } = useQuery({
-    queryKey: ['sentiment-analytics'],
-    queryFn: () => apiClient.getSentimentAnalytics(),
+    queryKey: ['sentiment-analytics', filterParams],
+    queryFn: () => apiClient.getSentimentAnalytics(filterParams),
   });
 
   const { data: engagement } = useQuery({
-    queryKey: ['engagement-analytics'],
-    queryFn: () => apiClient.getEngagementAnalytics(),
+    queryKey: ['engagement-analytics', filterParams],
+    queryFn: () => apiClient.getEngagementAnalytics(filterParams),
   });
 
   const { data: topHashtags } = useQuery({
@@ -32,8 +53,8 @@ export default function AnalyticsPage() {
   });
 
   const { data: trends } = useQuery({
-    queryKey: ['trends'],
-    queryFn: () => apiClient.getTrends(),
+    queryKey: ['trends', filterParams],
+    queryFn: () => apiClient.getTrends(filterParams),
   });
 
   const sentimentTotal =
@@ -155,12 +176,65 @@ export default function AnalyticsPage() {
     ];
   };
 
+  const clearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setPlatformId('');
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={t('analytics.title')}
         description={t('analytics.description')}
       />
+
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-card-foreground">{t('analytics.filterByDateRange')}</span>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">{t('analytics.startDate')}</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-card-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">{t('analytics.endDate')}</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-card-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">{t('analytics.filterByPlatform')}</label>
+            <select
+              value={platformId}
+              onChange={(e) => setPlatformId(e.target.value)}
+              className="rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-card-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
+            >
+              <option value="">{t('analytics.allPlatforms')}</option>
+              {platforms?.map((p: any) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          {hasFilters && (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              <X className="mr-1 h-3 w-3" />
+              {t('analytics.clearFilters')}
+            </Button>
+          )}
+        </div>
+      </Card>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">

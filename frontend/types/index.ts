@@ -219,6 +219,32 @@ export interface SentimentAnalytics {
   }>;
 }
 
+// Engagement Analytics types
+export interface TopEngagingPost {
+  id: string;
+  content: string;
+  engagementScore: number;
+  platform: string;
+  sentiment: string;
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  postedAt: string;
+}
+
+export interface EngagementAnalytics {
+  totalPosts: number;
+  totalLikes: number;
+  totalComments: number;
+  totalShares: number;
+  totalViews: number;
+  avgLikesPerPost: number;
+  avgCommentsPerPost: number;
+  avgSharesPerPost: number;
+  avgEngagementPerPost: number;
+  topEngagingPosts: TopEngagingPost[];
+}
+
 // Keyword types
 export interface Keyword {
   id: string;
@@ -227,6 +253,53 @@ export interface Keyword {
   priority: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface KeywordOverview {
+  keyword: string;
+  totalPosts: number;
+  totalEngagement: {
+    likes: number;
+    comments: number;
+    shares: number;
+    views: number;
+    score: number;
+  };
+  avgEngagementScore: number;
+  sentiment: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  platforms: Array<{
+    name: string;
+    type: string;
+    count: number;
+  }>;
+  dailyTrend: Array<{
+    date: string;
+    count: number;
+    engagement: number;
+  }>;
+  growthRate: {
+    daily: number;
+    weekly: number;
+    monthly: number;
+  };
+  topPosts: Post[];
+  topInfluencers: Array<{
+    id: string;
+    username: string;
+    fullName: string;
+    profilePictureUrl: string;
+    platformName: string;
+    isVerified: boolean;
+    postCount: number;
+    totalEngagement: number;
+  }>;
+  recentPosts: Post[];
+  firstMentionAt: string | null;
+  lastMentionAt: string | null;
 }
 
 // Pagination types

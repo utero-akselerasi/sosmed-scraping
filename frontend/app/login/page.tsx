@@ -569,7 +569,7 @@ export default function LoginPage() {
         ))}
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center gap-12 px-6 py-14 lg:flex-row lg:justify-between lg:gap-24 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:flex-row lg:justify-between lg:gap-24 lg:px-12">
         <motion.div
           variants={containerVariants}
           initial={reducedMotion ? false : 'hidden'}

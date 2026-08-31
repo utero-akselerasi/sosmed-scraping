@@ -256,7 +256,7 @@ export default function InfluencersPage() {
 
           {/* Pagination */}
           {influencersData.meta && (
-            <Card className="flex items-center justify-between p-4">
+            <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted-foreground">
                 {t('influencers.showingOf', {
                   start: ((page - 1) * 20) + 1,

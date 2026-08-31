@@ -1,6 +1,6 @@
 ﻿import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, MoreThanOrEqual } from "typeorm";
+import { Repository, MoreThanOrEqual, SelectQueryBuilder } from "typeorm";
 import { Post } from "../../common/entities/post.entity";
 import { Influencer } from "../../common/entities/influencer.entity";
 import { Platform } from "../../common/entities/platform.entity";
@@ -43,6 +43,11 @@ export class AnalyticsService {
     if (query.platformId) {
       queryBuilder.andWhere("post.platformId = :platformId", {
         platformId: query.platformId,
+      });
+    }
+    if (query.keyword) {
+      queryBuilder.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
       });
     }
 
@@ -139,11 +144,42 @@ export class AnalyticsService {
     };
   }
 
+  private applyDateFilters(
+    qb: SelectQueryBuilder<Post>,
+    query: AnalyticsQueryDto,
+    alias = "post",
+  ): void {
+    if (query.startDate) {
+      qb.andWhere(`${alias}.postedAt >= :startDate`, {
+        startDate: query.startDate,
+      });
+    }
+    if (query.endDate) {
+      qb.andWhere(`${alias}.postedAt <= :endDate`, {
+        endDate: query.endDate,
+      });
+    }
+    if (query.platformId) {
+      qb.andWhere(`${alias}.platformId = :platformId`, {
+        platformId: query.platformId,
+      });
+    }
+    if (query.keyword) {
+      qb.andWhere(`${alias}.content ILIKE :keyword`, {
+        keyword: `%${query.keyword}%`,
+      });
+    }
+  }
+
   async getTrendAnalytics(
-    _query: AnalyticsQueryDto,
+    query: AnalyticsQueryDto,
   ): Promise<TrendAnalyticsDto> {
-    // Get daily posts for the last 30 days
-    const dailyPosts = await this.postsRepository
+    const startDate =
+      query.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const endDate = query.endDate || new Date().toISOString();
+
+    // Get daily posts
+    const dailyQb = this.postsRepository
       .createQueryBuilder("post")
       .select("DATE(post.postedAt)", "date")
       .addSelect("COUNT(*)", "count")
@@ -151,52 +187,97 @@ export class AnalyticsService {
       .addSelect("COALESCE(SUM(post.likesCount), 0)", "likes")
       .addSelect("COALESCE(SUM(post.commentsCount), 0)", "comments")
       .addSelect("COALESCE(SUM(post.sharesCount), 0)", "shares")
-      .where("post.postedAt >= NOW() - INTERVAL '30 days'")
+      .where("post.postedAt >= :startDate", { startDate })
+      .andWhere("post.postedAt <= :endDate", { endDate });
+    if (query.platformId) {
+      dailyQb.andWhere("post.platformId = :platformId", {
+        platformId: query.platformId,
+      });
+    }
+    if (query.keyword) {
+      dailyQb.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
+    }
+    const dailyPosts = await dailyQb
       .groupBy("date")
       .orderBy("date", "ASC")
       .getRawMany();
 
     // Get hourly posts for the last 24 hours
-    const hourlyPosts = await this.postsRepository
+    const hourlyQb = this.postsRepository
       .createQueryBuilder("post")
       .select("DATE_TRUNC('hour', post.postedAt)", "date")
       .addSelect("COUNT(*)", "count")
       .addSelect("COALESCE(AVG(post.engagementScore), 0)", "engagement")
-      .where("post.postedAt >= NOW() - INTERVAL '24 hours'")
+      .where("post.postedAt >= NOW() - INTERVAL '24 hours'");
+    if (query.platformId) {
+      hourlyQb.andWhere("post.platformId = :platformId", {
+        platformId: query.platformId,
+      });
+    }
+    if (query.keyword) {
+      hourlyQb.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
+    }
+    const hourlyPosts = await hourlyQb
       .groupBy("date")
       .orderBy("date", "ASC")
       .getRawMany();
 
     // Calculate growth rates
-    const postsLast24Hours = await this.postsRepository
+    const growthFilter = (qb: SelectQueryBuilder<Post>) => {
+      if (query.platformId) {
+        qb.andWhere("post.platformId = :platformId", {
+          platformId: query.platformId,
+        });
+      }
+      if (query.keyword) {
+        qb.andWhere("post.content ILIKE :keyword", {
+          keyword: `%${query.keyword}%`,
+        });
+      }
+    };
+
+    const growthQb24h = this.postsRepository
       .createQueryBuilder("post")
-      .where("post.postedAt >= NOW() - INTERVAL '24 hours'")
-      .getCount();
-    const postsPrevious24Hours = await this.postsRepository
+      .where("post.postedAt >= NOW() - INTERVAL '24 hours'");
+    growthFilter(growthQb24h);
+    const postsLast24Hours = await growthQb24h.getCount();
+
+    const growthQbPrev24h = this.postsRepository
       .createQueryBuilder("post")
       .where("post.postedAt >= NOW() - INTERVAL '48 hours'")
-      .andWhere("post.postedAt < NOW() - INTERVAL '24 hours'")
-      .getCount();
+      .andWhere("post.postedAt < NOW() - INTERVAL '24 hours'");
+    growthFilter(growthQbPrev24h);
+    const postsPrevious24Hours = await growthQbPrev24h.getCount();
 
-    const postsLast7Days = await this.postsRepository
+    const growthQb7d = this.postsRepository
       .createQueryBuilder("post")
-      .where("post.postedAt >= NOW() - INTERVAL '7 days'")
-      .getCount();
-    const postsLast14Days = await this.postsRepository
+      .where("post.postedAt >= NOW() - INTERVAL '7 days'");
+    growthFilter(growthQb7d);
+    const postsLast7Days = await growthQb7d.getCount();
+
+    const growthQb14d = this.postsRepository
       .createQueryBuilder("post")
       .where("post.postedAt >= NOW() - INTERVAL '14 days'")
-      .andWhere("post.postedAt < NOW() - INTERVAL '7 days'")
-      .getCount();
+      .andWhere("post.postedAt < NOW() - INTERVAL '7 days'");
+    growthFilter(growthQb14d);
+    const postsLast14Days = await growthQb14d.getCount();
 
-    const postsLast30Days = await this.postsRepository
+    const growthQb30d = this.postsRepository
       .createQueryBuilder("post")
-      .where("post.postedAt >= NOW() - INTERVAL '30 days'")
-      .getCount();
-    const postsPrevious30Days = await this.postsRepository
+      .where("post.postedAt >= NOW() - INTERVAL '30 days'");
+    growthFilter(growthQb30d);
+    const postsLast30Days = await growthQb30d.getCount();
+
+    const growthQbPrev30d = this.postsRepository
       .createQueryBuilder("post")
       .where("post.postedAt >= NOW() - INTERVAL '60 days'")
-      .andWhere("post.postedAt < NOW() - INTERVAL '30 days'")
-      .getCount();
+      .andWhere("post.postedAt < NOW() - INTERVAL '30 days'");
+    growthFilter(growthQbPrev30d);
+    const postsPrevious30Days = await growthQbPrev30d.getCount();
 
     const calculateGrowth = (current: number, previous: number): number =>
       previous > 0
@@ -228,28 +309,52 @@ export class AnalyticsService {
   }
 
   async getTopHashtags(limit: number = 20): Promise<TopHashtagDto[]> {
-    const hashtags = await this.postsRepository
+    const currentHashtags = await this.postsRepository
       .createQueryBuilder("post")
       .select("unnest(post.hashtags)", "hashtag")
       .addSelect("COUNT(*)", "count")
       .where("post.postedAt >= NOW() - INTERVAL '7 days'")
       .groupBy("hashtag")
       .orderBy("count", "DESC")
-      .limit(limit)
+      .limit(limit * 2)
       .getRawMany();
 
-    return hashtags.map((item) => ({
-      hashtag: item.hashtag,
-      count: parseInt(item.count),
-      growth: 0, // Calculate if needed
-    }));
+    const previousHashtags = await this.postsRepository
+      .createQueryBuilder("post")
+      .select("unnest(post.hashtags)", "hashtag")
+      .addSelect("COUNT(*)", "count")
+      .where("post.postedAt >= NOW() - INTERVAL '14 days'")
+      .andWhere("post.postedAt < NOW() - INTERVAL '7 days'")
+      .groupBy("hashtag")
+      .getRawMany();
+
+    const previousMap = new Map<string, number>();
+    for (const item of previousHashtags) {
+      previousMap.set(item.hashtag, parseInt(item.count));
+    }
+
+    return currentHashtags.slice(0, limit).map((item) => {
+      const count = parseInt(item.count);
+      const prevCount = previousMap.get(item.hashtag) || 0;
+      const growth =
+        prevCount > 0
+          ? ((count - prevCount) / prevCount) * 100
+          : count > 0
+            ? 100
+            : 0;
+      return {
+        hashtag: item.hashtag,
+        count,
+        growth: Math.round(growth * 100) / 100,
+      };
+    });
   }
 
   async getSentimentAnalytics(
-    _query: AnalyticsQueryDto,
+    query: AnalyticsQueryDto,
   ): Promise<SentimentAnalyticsDto> {
     // Overall sentiment
-    const overall = await this.postsRepository
+    const overallQb = this.postsRepository
       .createQueryBuilder("post")
       .select("COUNT(*) FILTER (WHERE post.sentiment = 'positive')", "positive")
       .addSelect(
@@ -259,11 +364,12 @@ export class AnalyticsService {
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
         "negative",
-      )
-      .getRawOne();
+      );
+    this.applyDateFilters(overallQb, query);
+    const overall = await overallQb.getRawOne();
 
     // Sentiment by platform
-    const byPlatform = await this.postsRepository
+    const byPlatformQb = this.postsRepository
       .createQueryBuilder("post")
       .leftJoin("post.platform", "platform")
       .select("platform.name", "platformName")
@@ -278,12 +384,17 @@ export class AnalyticsService {
       .addSelect(
         "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
         "negative",
-      )
+      );
+    this.applyDateFilters(byPlatformQb, query);
+    const byPlatform = await byPlatformQb
       .groupBy("platform.name")
       .getRawMany();
 
-    // Sentiment trend (last 7 days)
-    const trend = await this.postsRepository
+    // Sentiment trend (last 7 days, or filtered range)
+    const trendStartDate =
+      query.startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const trendEndDate = query.endDate || new Date().toISOString();
+    const trendQb = this.postsRepository
       .createQueryBuilder("post")
       .select("DATE(post.postedAt)", "date")
       .addSelect(
@@ -298,7 +409,19 @@ export class AnalyticsService {
         "COUNT(*) FILTER (WHERE post.sentiment = 'negative')",
         "negative",
       )
-      .where("post.postedAt >= NOW() - INTERVAL '7 days'")
+      .where("post.postedAt >= :startDate", { startDate: trendStartDate })
+      .andWhere("post.postedAt <= :endDate", { endDate: trendEndDate });
+    if (query.platformId) {
+      trendQb.andWhere("post.platformId = :platformId", {
+        platformId: query.platformId,
+      });
+    }
+    if (query.keyword) {
+      trendQb.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
+      });
+    }
+    const trend = await trendQb
       .groupBy("date")
       .orderBy("date", "ASC")
       .getRawMany();
@@ -325,26 +448,28 @@ export class AnalyticsService {
   }
 
   async getEngagementAnalytics(
-    _query: AnalyticsQueryDto,
+    query: AnalyticsQueryDto,
   ): Promise<EngagementAnalyticsDto> {
-    const stats = await this.postsRepository
+    const statsQb = this.postsRepository
       .createQueryBuilder("post")
       .select("COUNT(*)", "totalPosts")
       .addSelect("COALESCE(SUM(post.likesCount), 0)", "totalLikes")
       .addSelect("COALESCE(SUM(post.commentsCount), 0)", "totalComments")
       .addSelect("COALESCE(SUM(post.sharesCount), 0)", "totalShares")
-      .addSelect("COALESCE(SUM(post.viewsCount), 0)", "totalViews")
-      .getRawOne();
+      .addSelect("COALESCE(SUM(post.viewsCount), 0)", "totalViews");
+    this.applyDateFilters(statsQb, query);
+    const stats = await statsQb.getRawOne();
 
     const totalPosts = parseInt(stats.totalPosts) || 1;
 
     // Get top engaging posts
-    const topPosts = await this.postsRepository
+    const topPostsQb = this.postsRepository
       .createQueryBuilder("post")
       .leftJoinAndSelect("post.platform", "platform")
       .orderBy("post.engagementScore", "DESC")
-      .limit(10)
-      .getMany();
+      .limit(10);
+    this.applyDateFilters(topPostsQb, query);
+    const topPosts = await topPostsQb.getMany();
 
     const totalLikes = parseInt(stats.totalLikes) || 0;
     const totalComments = parseInt(stats.totalComments) || 0;
@@ -366,6 +491,11 @@ export class AnalyticsService {
         content: post.content?.substring(0, 100) || "",
         engagementScore: parseFloat(post.engagementScore?.toString() || "0"),
         platform: post.platform?.name || "",
+        sentiment: post.sentiment || "neutral",
+        likesCount: post.likesCount || 0,
+        commentsCount: post.commentsCount || 0,
+        sharesCount: post.sharesCount || 0,
+        postedAt: post.postedAt?.toISOString() || "",
       })),
     };
   }

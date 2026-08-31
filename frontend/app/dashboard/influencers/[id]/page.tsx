@@ -18,6 +18,9 @@ import {
 import { CustomPieChart } from '@/components/charts/pie-chart';
 import { EngagementAreaChart } from '@/components/charts/area-chart';
 import { Card } from '@/components/ui/card';
+import Image from 'next/image';
+
+const externalImageLoader = ({ src }: { src: string }) => src;
 
 export default function InfluencerDetailPage() {
   const { t } = useI18n();
@@ -127,10 +130,12 @@ export default function InfluencerDetailPage() {
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-4">
             {influencer.profilePictureUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={influencer.profilePictureUrl}
                 alt={influencer.fullName}
+                width={80}
+                height={80}
+                loader={externalImageLoader}
                 className="h-20 w-20 rounded-full border-2 border-border object-cover shadow-card-hover"
               />
             ) : (

@@ -124,7 +124,7 @@ class ApiClient {
   }
 
   async getTopHashtags(limit?: number) {
-    const response = await this.client.get('/posts/top-hashtags', { params: { limit } });
+    const response = await this.client.get('/analytics/top-hashtags', { params: { limit } });
     return response.data;
   }
 
@@ -223,6 +223,13 @@ class ApiClient {
     return response.data;
   }
 
+  async getKeywordOverview(keyword: string) {
+    const response = await this.client.get('/analytics/keyword/overview', {
+      params: { keyword },
+    });
+    return response.data;
+  }
+
   // Users endpoints
   async getUsers(params?: any) {
     const response = await this.client.get('/users', { params });
@@ -242,6 +249,21 @@ class ApiClient {
   async deleteUser(id: string) {
     const response = await this.client.delete(`/users/${id}`);
     return response.data;
+  }
+
+  async toggleUserActive(id: string) {
+    const response = await this.client.patch(`/users/${id}/toggle`);
+    return response.data;
+  }
+
+  // Profile endpoints
+  async updateProfile(data: { fullName?: string; email?: string }) {
+    const response = await this.client.patch('/users/profile', data);
+    return response.data;
+  }
+
+  async changePassword(data: { currentPassword: string; newPassword: string }) {
+    await this.client.patch('/users/profile/password', data);
   }
 }
 

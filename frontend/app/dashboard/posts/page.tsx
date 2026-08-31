@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
-import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor, getPlatformLabel } from '@/lib/format';
-import { Search, Filter, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, TrendingUp } from 'lucide-react';
-import { Post, SentimentType } from '@/types';
+import { formatNumber, formatRelativeTime, getSentimentColor, getPlatformColor, getPlatformLabel, getSentimentLabel } from '@/lib/format';
+import { Search, Filter, ExternalLink, ThumbsUp, MessageCircle, Share2, Eye, TrendingUp, ArrowUpDown, AlertCircle } from 'lucide-react';
+import { Post, Platform } from '@/types';
 import { ExportDropdown } from '@/components/export-button';
 import { ExportService } from '@/lib/export/export-service';
 import { PostDetailModal } from '@/components/ui/post-detail-modal';
@@ -17,23 +17,53 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+
+const externalImageLoader = ({ src }: { src: string }) => src;
 
 const inputClasses =
   'w-full rounded-lg border border-input bg-card px-4 py-2 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40';
+
+interface SortOption {
+  value: string;
+  order: 'ASC' | 'DESC';
+  labelKey: string;
+}
+
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'postedAt', order: 'DESC', labelKey: 'posts.sortNewest' },
+  { value: 'postedAt', order: 'ASC', labelKey: 'posts.sortOldest' },
+  { value: 'engagementScore', order: 'DESC', labelKey: 'posts.sortMostEngagement' },
+  { value: 'likesCount', order: 'DESC', labelKey: 'posts.sortMostLikes' },
+  { value: 'commentsCount', order: 'DESC', labelKey: 'posts.sortMostComments' },
+  { value: 'sharesCount', order: 'DESC', labelKey: 'posts.sortMostShared' },
+];
+
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov|avi)$/i.test(url) || url.includes('video');
+}
 
 export default function PostsPage() {
   const { t } = useI18n();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [sentiment, setSentiment] = useState<string>('');
-  const [platformId, setPlatformId] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  const [sentiment, setSentiment] = useState('');
+  const [platformId, setPlatformId] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [sortIdx, setSortIdx] = useState(0);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const { success, error } = useToast();
 
-  const { data: postsData, isLoading } = useQuery({
-    queryKey: ['posts', page, search, sentiment, platformId, startDate, endDate],
+  const currentSort = SORT_OPTIONS[sortIdx];
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const { data: postsData, isLoading, isError, refetch } = useQuery({
+    queryKey: ['posts', page, search, sentiment, platformId, startDate, endDate, currentSort.value, currentSort.order],
     queryFn: () => apiClient.getPosts({
       page,
       limit: 20,
@@ -42,8 +72,8 @@ export default function PostsPage() {
       platformId: platformId || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      sortBy: 'postedAt',
-      sortOrder: 'DESC',
+      sortBy: currentSort.value,
+      sortOrder: currentSort.order,
     }),
   });
 
@@ -53,8 +83,9 @@ export default function PostsPage() {
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['posts-stats', sentiment, platformId, startDate, endDate],
+    queryKey: ['posts-stats', search, sentiment, platformId, startDate, endDate],
     queryFn: () => apiClient.getPostsStats({
+      search: search || undefined,
       sentiment: sentiment || undefined,
       platformId: platformId || undefined,
       startDate: startDate || undefined,
@@ -62,18 +93,13 @@ export default function PostsPage() {
     }),
   });
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-  };
-
   const handleExportCSV = () => {
     try {
       if (postsData?.data) {
         ExportService.exportPosts(postsData.data);
         success(t('posts.exportSuccessful'), t('posts.exportedToCsv', { count: postsData.data.length }));
       }
-    } catch (err) {
+    } catch {
       error(t('posts.exportFailed'), t('posts.exportFailedMsg'));
     }
   };
@@ -84,7 +110,7 @@ export default function PostsPage() {
         ExportService.downloadJSON(postsData.data, `posts_export_${new Date().toISOString().split('T')[0]}`);
         success(t('posts.exportSuccessful'), t('posts.exportedToJson', { count: postsData.data.length }));
       }
-    } catch (err) {
+    } catch {
       error(t('posts.exportFailed'), t('posts.exportFailedMsg'));
     }
   };
@@ -93,26 +119,12 @@ export default function PostsPage() {
     setSelectedPost(post);
   };
 
-  const handleApplyPreset = (preset: any) => {
-    if (preset.filters.sentiment) {
-      setSentiment(preset.filters.sentiment);
-    } else {
-      setSentiment('');
-    }
-    if (preset.filters.platformId) {
-      setPlatformId(preset.filters.platformId);
-    } else {
-      setPlatformId('');
-    }
-    if (preset.filters.search) {
-      setSearch(preset.filters.search);
-    }
-    if (preset.filters.startDate) {
-      setStartDate(preset.filters.startDate);
-    }
-    if (preset.filters.endDate) {
-      setEndDate(preset.filters.endDate);
-    }
+  const handleApplyPreset = (preset: { name: string; filters: Record<string, any> }) => {
+    setSentiment(preset.filters.sentiment || '');
+    setPlatformId(preset.filters.platformId || '');
+    setSearch(preset.filters.search || '');
+    setStartDate(preset.filters.startDate || '');
+    setEndDate(preset.filters.endDate || '');
     setPage(1);
     success(t('posts.presetApplied'), t('posts.presetAppliedMsg', { name: preset.name }));
   };
@@ -128,6 +140,18 @@ export default function PostsPage() {
   const handleDateRangeChange = (start: string | null, end: string | null) => {
     setStartDate(start || '');
     setEndDate(end || '');
+    setPage(1);
+  };
+
+  const hasActiveFilters = search || sentiment || platformId || startDate || endDate;
+
+  const clearAllFilters = () => {
+    setSearch('');
+    setSentiment('');
+    setPlatformId('');
+    setStartDate('');
+    setEndDate('');
+    setSortIdx(0);
     setPage(1);
   };
 
@@ -167,7 +191,7 @@ export default function PostsPage() {
         </div>
       )}
 
-      {/* Filter Presets & Date Range */}
+      {/* Filter Presets, Date Range, Sort & Clear */}
       <div className="flex flex-wrap items-center gap-3">
         <FilterPresets
           onApplyPreset={handleApplyPreset}
@@ -178,6 +202,26 @@ export default function PostsPage() {
           endDate={endDate || null}
           onChange={handleDateRangeChange}
         />
+        <div className="relative">
+          <select
+            value={sortIdx}
+            onChange={(e) => setSortIdx(Number(e.target.value))}
+            className={cn(inputClasses, 'w-auto pr-8')}
+            aria-label={t('posts.sortBy')}
+          >
+            {SORT_OPTIONS.map((opt, idx) => (
+              <option key={idx} value={idx}>
+                {t(opt.labelKey)}
+              </option>
+            ))}
+          </select>
+          <ArrowUpDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+            {t('posts.clearFilters')}
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -187,7 +231,7 @@ export default function PostsPage() {
           <h2 className="text-lg font-semibold text-card-foreground">{t('posts.filters')}</h2>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <form onSubmit={(e) => e.preventDefault()} className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-card-foreground">
               {t('common.search')}
@@ -197,7 +241,7 @@ export default function PostsPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={t('posts.searchPlaceholder')}
                 className={cn(inputClasses, 'pl-10')}
               />
@@ -206,7 +250,7 @@ export default function PostsPage() {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-card-foreground">
-              {t('common.status')}
+              {t('common.sentiment')}
             </label>
             <select
               value={sentiment}
@@ -236,7 +280,7 @@ export default function PostsPage() {
               className={inputClasses}
             >
               <option value="">{t('common.allPlatforms')}</option>
-              {platforms?.map((platform: any) => (
+              {platforms?.map((platform: Platform) => (
                 <option key={platform.id} value={platform.id}>
                   {getPlatformLabel(platform.type, platform.name)}
                 </option>
@@ -246,16 +290,31 @@ export default function PostsPage() {
         </form>
       </Card>
 
-      {/* Posts List */}
-      {isLoading ? (
+      {/* Error State */}
+      {isError && (
+        <Card className="p-12 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <p className="text-lg font-medium text-card-foreground">{t('posts.errorLoading')}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('posts.errorLoadingHint')}</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+            {t('posts.retry')}
+          </Button>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
         <Card className="p-12 text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
           <p className="mt-4 text-sm text-muted-foreground">{t('posts.loading')}</p>
         </Card>
-      ) : postsData?.data && postsData.data.length > 0 ? (
+      )}
+
+      {/* Posts List */}
+      {!isLoading && !isError && postsData?.data && postsData.data.length > 0 && (
         <>
           <div className="space-y-4">
-            {postsData.data.map((post: any) => (
+            {postsData.data.map((post: Post) => (
               <Card
                 key={post.id}
                 interactive
@@ -265,19 +324,23 @@ export default function PostsPage() {
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 font-bold text-white">
-                      {post.influencerName?.charAt(0).toUpperCase() || '?'}
+                      {post.influencerName?.charAt(0).toUpperCase() || post.influencerUsername?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div>
-                      <p className="font-semibold text-card-foreground">{post.influencerName}</p>
-                      <p className="text-sm text-muted-foreground">@{post.influencerUsername}</p>
+                      <p className="font-semibold text-card-foreground">
+                        {post.influencerName || t('posts.unknownAuthor')}
+                      </p>
+                      {post.influencerUsername && (
+                        <p className="text-sm text-muted-foreground">@{post.influencerUsername}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getPlatformColor(post.platformName || ''))}>
+                    <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getPlatformColor(post.platformType || post.platformName || ''))}>
                       {getPlatformLabel(post.platformType, post.platformName)}
                     </span>
-                    <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getSentimentColor(post.sentiment as SentimentType))}>
-                      {post.sentiment}
+                    <span className={cn('rounded-full px-3 py-1 text-xs font-medium', getSentimentColor(post.sentiment))}>
+                      {getSentimentLabel(post.sentiment)}
                     </span>
                   </div>
                 </div>
@@ -285,18 +348,26 @@ export default function PostsPage() {
                 <p className="mb-3 line-clamp-3 text-card-foreground/90">{post.content}</p>
 
                 {post.mediaUrls && post.mediaUrls.length > 0 && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={post.mediaUrls[0]}
-                    alt={post.content || post.platformPostId}
-                    className="mb-3 max-h-72 w-full rounded-xl border border-border object-cover"
-                    loading="lazy"
-                  />
+                  isVideoUrl(post.mediaUrls[0]) ? (
+                    <div className="mb-3 flex h-48 items-center justify-center rounded-xl border border-border bg-muted/50">
+                      <span className="text-sm text-muted-foreground">{t('posts.videoContent')}</span>
+                    </div>
+                  ) : (
+                    <Image
+                      src={post.mediaUrls[0]}
+                      alt={post.content || post.platformPostId}
+                      width={800}
+                      height={600}
+                      loader={externalImageLoader}
+                      className="mb-3 max-h-72 w-full rounded-xl border border-border object-cover"
+                      loading="lazy"
+                    />
+                  )
                 )}
 
                 {post.hashtags && post.hashtags.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-2">
-                    {post.hashtags.slice(0, 5).map((tag: any, idx: number) => (
+                    {post.hashtags.slice(0, 5).map((tag: string, idx: number) => (
                       <span key={idx} className="text-sm text-primary">
                         #{tag}
                       </span>
@@ -309,8 +380,8 @@ export default function PostsPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between border-t border-border pt-3">
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><ThumbsUp className="h-4 w-4" /> {formatNumber(post.likesCount)}</span>
                     <span className="flex items-center gap-1"><MessageCircle className="h-4 w-4" /> {formatNumber(post.commentsCount)}</span>
                     <span className="flex items-center gap-1"><Share2 className="h-4 w-4" /> {formatNumber(post.sharesCount)}</span>
@@ -319,7 +390,7 @@ export default function PostsPage() {
                       <TrendingUp className="h-4 w-4" /> {post.engagementScore.toFixed(1)}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
                       {formatRelativeTime(post.postedAt)}
                     </span>
@@ -374,10 +445,18 @@ export default function PostsPage() {
             </Card>
           )}
         </>
-      ) : (
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !isError && (!postsData?.data || postsData.data.length === 0) && (
         <Card className="p-12 text-center">
           <p className="text-lg text-card-foreground">{t('posts.noPosts')}</p>
           <p className="mt-2 text-sm text-muted-foreground">{t('posts.noPostsHint')}</p>
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" className="mt-4" onClick={clearAllFilters}>
+              {t('posts.clearFilters')}
+            </Button>
+          )}
         </Card>
       )}
 

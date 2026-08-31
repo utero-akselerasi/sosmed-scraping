@@ -31,6 +31,7 @@ export class PostsService {
       postType,
       sentiment,
       search,
+      keyword,
       hashtag,
       startDate,
       endDate,
@@ -64,8 +65,15 @@ export class PostsService {
     }
 
     if (search) {
-      queryBuilder.andWhere("post.content ILIKE :search", {
-        search: `%${search}%`,
+      queryBuilder.andWhere(
+        "(post.content ILIKE :search OR influencer.username ILIKE :search OR influencer.fullName ILIKE :search)",
+        { search: `%${search}%` },
+      );
+    }
+
+    if (keyword) {
+      queryBuilder.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${keyword}%`,
       });
     }
 
@@ -86,9 +94,19 @@ export class PostsService {
     // Apply sorting - map snake_case DB columns to camelCase entity properties
     const sortFieldMap: Record<string, string> = {
       'posted_at': 'postedAt',
+      'postedAt': 'postedAt',
       'engagement_score': 'engagementScore',
+      'engagementScore': 'engagementScore',
       'likes_count': 'likesCount',
+      'likesCount': 'likesCount',
       'comments_count': 'commentsCount',
+      'commentsCount': 'commentsCount',
+      'shares_count': 'sharesCount',
+      'sharesCount': 'sharesCount',
+      'views_count': 'viewsCount',
+      'viewsCount': 'viewsCount',
+      'scraped_at': 'scrapedAt',
+      'scrapedAt': 'scrapedAt',
     };
     const actualSortBy = sortFieldMap[sortBy] || sortBy;
     const sortColumn = `post.${actualSortBy}`;
@@ -131,7 +149,9 @@ export class PostsService {
   }
 
   async getPostStats(query: GetPostsQueryDto): Promise<PostStatsDto> {
-    const queryBuilder = this.postsRepository.createQueryBuilder("post");
+    const queryBuilder = this.postsRepository
+      .createQueryBuilder("post")
+      .leftJoin("post.influencer", "influencer");
 
     // Apply same filters as getPosts
     if (query.platformId) {
@@ -159,8 +179,15 @@ export class PostsService {
     }
 
     if (query.search) {
-      queryBuilder.andWhere("post.content ILIKE :search", {
-        search: `%${query.search}%`,
+      queryBuilder.andWhere(
+        "(post.content ILIKE :search OR influencer.username ILIKE :search OR influencer.fullName ILIKE :search)",
+        { search: `%${query.search}%` },
+      );
+    }
+
+    if (query.keyword) {
+      queryBuilder.andWhere("post.content ILIKE :keyword", {
+        keyword: `%${query.keyword}%`,
       });
     }
 

@@ -1,5 +1,5 @@
 ﻿import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional, IsDateString } from "class-validator";
+import { IsOptional, IsDateString, IsString } from "class-validator";
 
 export class AnalyticsQueryDto {
   @ApiPropertyOptional({ description: "Start date (ISO 8601)" })
@@ -15,6 +15,11 @@ export class AnalyticsQueryDto {
   @ApiPropertyOptional({ description: "Platform ID filter" })
   @IsOptional()
   platformId?: string;
+
+  @ApiPropertyOptional({ description: "Filter by keyword in post content" })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
 }
 
 export class DashboardOverviewDto {
@@ -162,5 +167,10 @@ export class EngagementAnalyticsDto {
     content: string;
     engagementScore: number;
     platform: string;
+    sentiment: string;
+    likesCount: number;
+    commentsCount: number;
+    sharesCount: number;
+    postedAt: string;
   }>;
 }

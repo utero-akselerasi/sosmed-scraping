@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useI18n } from '@/lib/i18n';
+import { apiClient } from '@/lib/api-client';
 import { User, Mail, Lock, Save, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/card';
@@ -13,7 +14,7 @@ const inputClasses =
   'w-full rounded-lg border border-input bg-card py-2 pl-10 pr-4 text-sm text-card-foreground transition-all duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refetchUser } = useAuth();
   const { t } = useI18n();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -35,31 +36,16 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fullName: profileData.fullName,
-          email: profileData.email,
-        }),
+      await apiClient.updateProfile({
+        fullName: profileData.fullName,
+        email: profileData.email,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || t('profile.updateFailed'));
-      }
-
-      // Reload page to update user data
-      window.location.reload();
-
+      await refetchUser();
       toast.success(t('profile.updateSuccessful'));
       setIsEditingProfile(false);
     } catch (error: any) {
-      toast.error(error.message || t('profile.updateFailed'));
+      toast.error(apiClient.getErrorMessage(error, t('profile.updateFailed')));
     } finally {
       setIsLoading(false);
     }
@@ -81,23 +67,10 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile/password`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
+      await apiClient.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || t('profile.passwordChangeFailed'));
-      }
 
       toast.success(t('profile.passwordChanged'));
       setPasswordData({
@@ -107,7 +80,7 @@ export default function ProfilePage() {
       });
       setIsChangingPassword(false);
     } catch (error: any) {
-      toast.error(error.message || t('profile.passwordChangeFailed'));
+      toast.error(apiClient.getErrorMessage(error, t('profile.passwordChangeFailed')));
     } finally {
       setIsLoading(false);
     }
