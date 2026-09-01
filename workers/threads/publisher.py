@@ -249,7 +249,33 @@ class ThreadsPublisher:
         )
 
     async def _upload_image(self, page: Any, image_path: Path) -> None:
-        """Attach file gambar di composer + tunggu upload selesai."""
+        """Attach file gambar ke composer Threads dan tunggu hingga upload selesai.
+
+        Alur:
+        1. Tunggu input file media tersedia (selector MEDIA_FILE_INPUT).
+        2. Set file gambar ke input (memicu upload browser).
+        3. Polling selector MEDIA_UPLOAD_PROGRESS sampai hidden (indikator
+           upload selesai). NOTE: Selector progress ini BELUM terverifikasi
+           terhadap UI Threads live - lihat catatan di bawah.
+        4. Best-effort: tunggu pratinjau media (MEDIA_PREVIEW_IMAGE) visible
+           sebagai konfirmasi tambahan (bukan penanda wajib).
+
+        Catatan verifikasi UI:
+        - Selector MEDIA_UPLOAD_PROGRESS & MEDIA_PREVIEW_IMAGE diambil dari
+          inspeksi DOM pada saat development; Threads dapat mengubah struktur
+          composer kapan saja tanpa ankungan.
+        - Jika selector progress berubah, wait_for hidden akan timeout dan
+          raise ThreadsMediaUploadFailedError (aman - tidak publish separuh).
+        - Pratinjau media best-effort: jika selector tidak ditemukan, lanjut
+          saja (log debug) agar tidak blocking false positive.
+        - SEBELUM deploy production: verifikasi selector di selectors.py
+          melawan UI Threads live di browser.
+
+        Raises:
+            ThreadsSelectorChangedError: Jika input file media tidak ditemukan.
+            ThreadsMediaUploadFailedError: Jika attach file gagal atau upload
+                tidak selesai dalam timeout.
+        """
         file_input = page.locator(selectors.MEDIA_FILE_INPUT).first
         try:
             await file_input.wait_for(state="attached", timeout=self.config.timeout_ms)
@@ -267,9 +293,13 @@ class ThreadsPublisher:
             ) from e
 
         # Tunggu indikator upload selesai (progressbar hilang / pratinjau
-        # muncul). Jika selector indikator belum terverifikasi, tunggu
-        # singkat lalu lanjut.
-        # TODO: requires live Threads UI verification
+        # muncul). Selector MEDIA_UPLOAD_PROGRESS BELUM terverifikasi live
+        # di UI Threads production - lihat docstring method untuk detail.
+        # NOTE: Upload completion indicator selectors (MEDIA_UPLOAD_PROGRESS)
+        # require live Threads UI verification. Current implementation waits
+        # for progress bar to hide as best-effort; if selector changes in
+        # Threads UI, upload may proceed before fully complete.
+        # Verify selectors.py against live UI before production deploy.
         try:
             for selector in selectors.MEDIA_UPLOAD_PROGRESS:
                 locator = page.locator(selector)
