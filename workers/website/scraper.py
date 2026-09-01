@@ -992,7 +992,25 @@ class WebsiteScraper:
         return None
 
     def extract_article_content(self, soup: BeautifulSoup) -> Dict[str, Any]:
-        """Extract article content from HTML"""
+        """Extract article title, content, and images from parsed HTML.
+
+        Ekstraksi bertahap dengan fallback strategy:
+        1. Title: h1 > og:title > twitter:title > <title> tag
+        2. Content: Cari blok konten via _find_content_block (selector eksplisit
+           CONTENT_SELECTORS, lalu fallback div dengan <p> terbanyak).
+           - Gabung teks dari <p> di dalam blok.
+           - Jika < 200 char, ambil text langsung dari blok (beberapa situs
+             taruh isi di div tanpa <p>).
+           - Fallback terakhir: semua <p> di halaman (max 40).
+        3. Images: Ambil src/data-src/data-lazy-src dari <img> (max 5, HTTP only).
+
+        Args:
+            soup: BeautifulSoup object dari HTML halaman artikel.
+
+        Returns:
+            Dict dengan keys: 'title' (str), 'content' (str), 'images' (List[str]).
+            Field yang tidak ditemukan dikembalikan sebagai string kosong / list kosong.
+        """
         article = {}
 
         try:
