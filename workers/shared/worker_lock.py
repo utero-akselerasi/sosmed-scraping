@@ -16,9 +16,14 @@ kali seed ulang). Lock session-scoped: otomatis lepas saat koneksi/pid
 mati, tidak ada lock basi.
 """
 
+from __future__ import annotations
+
+import asyncpg
 import zlib
 from typing import Optional
 from loguru import logger
+
+from shared.database import DatabaseManager
 
 
 class WorkerLock:
@@ -28,11 +33,11 @@ class WorkerLock:
         self.platform_type = platform_type
         # Key integer stabil per platform (crc32 -> 31-bit positif)
         self.key = zlib.crc32(platform_type.encode('utf-8')) & 0x7FFFFFFF
-        self.db = None
-        self.conn = None
+        self.db: Optional[DatabaseManager] = None
+        self.conn: Optional[asyncpg.Connection] = None
         self.acquired = False
 
-    async def acquire(self, db) -> bool:
+    async def acquire(self, db: DatabaseManager) -> bool:
         """Ambil dedicated connection lalu coba lock non-blocking.
 
         Mengembalikan True jika lock berhasil / False jika platform yang
