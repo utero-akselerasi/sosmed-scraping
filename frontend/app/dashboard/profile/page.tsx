@@ -33,6 +33,14 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(profileData.email)) {
+      toast.error(t('profile.invalidEmail'));
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -49,6 +57,31 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+    if (!password) return { score: 0, label: '', color: 'bg-gray-200' };
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    const strengthLevels = [
+      { label: t('profile.passwordWeak'), color: 'bg-red-500' },
+      { label: t('profile.passwordFair'), color: 'bg-orange-500' },
+      { label: t('profile.passwordGood'), color: 'bg-yellow-500' },
+      { label: t('profile.passwordStrong'), color: 'bg-lime-500' },
+      { label: t('profile.passwordVeryStrong'), color: 'bg-green-500' },
+    ];
+
+    return {
+      score,
+      label: strengthLevels[score]?.label || '',
+      color: strengthLevels[score]?.color || 'bg-gray-200',
+    };
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -230,6 +263,21 @@ export default function ProfilePage() {
                         className={inputClasses}
                       />
                     </div>
+                    {field.key === 'newPassword' && passwordData.newPassword && (
+                      <div className="mt-2">
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {t('profile.passwordStrength')}: {getPasswordStrength(passwordData.newPassword).label}
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                          <div
+                            className={`h-full transition-all duration-300 ${getPasswordStrength(passwordData.newPassword).color}`}
+                            style={{ width: `${(getPasswordStrength(passwordData.newPassword).score / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
 

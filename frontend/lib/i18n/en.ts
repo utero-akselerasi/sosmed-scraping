@@ -417,6 +417,7 @@ export const en = {
   'profile.saveChanges': 'Save Changes',
   'profile.updateFailed': 'Failed to update profile',
   'profile.updateSuccessful': 'Profile updated successfully!',
+  'profile.invalidEmail': 'Please enter a valid email address',
   'profile.changePassword': 'Change Password',
   'profile.currentPassword': 'Current Password',
   'profile.newPassword': 'New Password',
@@ -427,6 +428,12 @@ export const en = {
   'profile.passwordChangeFailed': 'Failed to change password',
   'profile.passwordsDoNotMatch': 'Passwords do not match',
   'profile.passwordTooShort': 'Password must be at least 6 characters',
+  'profile.passwordStrength': 'Password strength',
+  'profile.passwordWeak': 'Weak',
+  'profile.passwordFair': 'Fair',
+  'profile.passwordGood': 'Good',
+  'profile.passwordStrong': 'Strong',
+  'profile.passwordVeryStrong': 'Very Strong',
   'profile.securityHint': 'Keep your account secure by using a strong password',
 
   // Post detail modal

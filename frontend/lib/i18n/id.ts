@@ -417,6 +417,7 @@ export const id: Record<keyof typeof import('./en').en, string> = {
   'profile.saveChanges': 'Simpan Perubahan',
   'profile.updateFailed': 'Gagal memperbarui profil',
   'profile.updateSuccessful': 'Profil berhasil diperbarui!',
+  'profile.invalidEmail': 'Mohon masukkan alamat email yang valid',
   'profile.changePassword': 'Ganti Kata Sandi',
   'profile.currentPassword': 'Kata Sandi Saat Ini',
   'profile.newPassword': 'Kata Sandi Baru',
@@ -427,6 +428,12 @@ export const id: Record<keyof typeof import('./en').en, string> = {
   'profile.passwordChangeFailed': 'Gagal mengubah kata sandi',
   'profile.passwordsDoNotMatch': 'Kata sandi tidak cocok',
   'profile.passwordTooShort': 'Kata sandi minimal 6 karakter',
+  'profile.passwordStrength': 'Kekuatan kata sandi',
+  'profile.passwordWeak': 'Lemah',
+  'profile.passwordFair': 'Cukup',
+  'profile.passwordGood': 'Baik',
+  'profile.passwordStrong': 'Kuat',
+  'profile.passwordVeryStrong': 'Sangat Kuat',
   'profile.securityHint': 'Jaga keamanan akun Anda dengan menggunakan kata sandi yang kuat',
 
   // Post detail modal
