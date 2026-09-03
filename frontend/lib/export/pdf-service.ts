@@ -7,6 +7,11 @@
 
 import { formatNumber, formatDateTime } from '@/lib/format';
 import { getDictionary } from '@/lib/i18n';
+import type {
+  DashboardOverviewData,
+  PostsReportData,
+  AnalyticsReportData,
+} from '@/types/pdf';
 
 const d = () => getDictionary();
 
@@ -14,7 +19,7 @@ export class PDFReportService {
   /**
    * Generate Dashboard Overview Report
    */
-  static async generateDashboardReport(overview: any) {
+  static async generateDashboardReport(overview: DashboardOverviewData) {
     try {
       // Dynamic import to avoid SSR issues
       const jsPDF = (await import('jspdf')).default;
@@ -127,7 +132,7 @@ export class PDFReportService {
   /**
    * Generate Posts Report
    */
-  static async generatePostsReport(posts: any[], filters?: any) {
+  static async generatePostsReport(posts: PostsReportData['posts'], filters?: PostsReportData['filters']) {
     try {
       const jsPDF = (await import('jspdf')).default;
       await import('jspdf-autotable');
@@ -217,7 +222,7 @@ export class PDFReportService {
   /**
    * Generate Analytics Report
    */
-  static async generateAnalyticsReport(analytics: any) {
+  static async generateAnalyticsReport(analytics: AnalyticsReportData) {
     try {
       const jsPDF = (await import('jspdf')).default;
       await import('jspdf-autotable');
@@ -285,7 +290,7 @@ export class PDFReportService {
         doc.setFontSize(14);
         doc.text(d()['pdf.topHashtags'], 14, yPos);
         
-        const hashtagData = analytics.hashtags.slice(0, 20).map((item: any, idx: number) => [
+        const hashtagData = analytics.hashtags.slice(0, 20).map((item, idx: number) => [
           String(idx + 1),
           item.hashtag,
           formatNumber(item.count),
